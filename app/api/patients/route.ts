@@ -54,9 +54,18 @@ export async function GET(req: Request) {
 
         const whereClause = conditions.join(" AND ");
         const list = `
-          SELECT * FROM patients
+          -- MAX find the latest registration data per patient
+          SELECT p.*, MAX(r.registration_date) AS latest_reg_date
+          FROM patients p
+
+          -- LEFT JOIN pulls each patient regist (non-deleted one)
+          LEFT JOIN registrations r ON r.patient_id = p.id AND r.deleted_at IS NULL
+
           WHERE ${whereClause}
-          ORDER BY created_at DESC
+          GROUP BY p.id
+          
+          -- NULLS LAST keep never registered patient at the bottom
+          ORDER BY latest_reg_date DESC NULLS LAST, p.created_at DESC
           LIMIT $${index};
         `;
         params.push(limit);
@@ -88,5 +97,96 @@ export async function PATCH(req: Request) {
     } catch (err) {
         console.error(err);
         return NextResponse.json({error: "Internal server error."}, {status: 500});
+    }
+}
+
+export async function PUT(req: Request) {
+    try {
+        const body = await req.json();
+        const {id, fullName, dateOfBirth, phone, address, photoUrl} = body || {};
+        const patientId = Number(id);
+        if (!patientId || Number.isNaN(patientId)) {
+            return NextResponse.json({error: "id is required."}, {status: 400});
+        }
+
+        const existingPatient = await query("SELECT id, deleted_at FROM patients WHERE id = $1", [patientId]);
+        if (existingPatient.rowCount === 0) {
+            return NextResponse.json({error: "Patient not found."}, {status: 404});
+        }
+        if (existingPatient.rows[0].deleted_at) {
+            return NextResponse.json({error: "Cannot update a soft-deleted patient. Please undo the delete."}, {status: 400});
+        }
+
+        const fields: string[] = [];
+        const params: any[] = [];
+        let index = 1;
+        const name = fullName?.trim();
+
+        if (name) {
+            fields.push(`full_name = $${index}`);
+            params.push(name);
+            index++;
+        }
+        if (dateOfBirth) {
+            fields.push(`date_of_birth = $${index}`);
+            params.push(dateOfBirth);
+            index++;
+        }
+        if (phone !== undefined) {
+            fields.push(`phone = $${index}`);
+            params.push(phone ?? null);
+            index++;
+        }
+        if (address !== undefined) {
+            fields.push(`address = $${index}`);
+            params.push(address ?? null);
+            index++;
+        }
+        if (photoUrl !== undefined) {
+            fields.push(`photo_url = $${index}`);
+            params.push(photoUrl ?? null);
+            index++;
+        }
+        if (fields.length === 0) {
+            return NextResponse.json({error: "No fields to update."}, {status: 400});
+        }
+        
+        fields.push("updated_at = NOW()");
+        const sql = `UPDATE patients SET ${fields.join(", ")} WHERE id = $${index} RETURNING *;`;
+        params.push(patientId);
+
+        const {rows} = await query(sql, params);
+        return NextResponse.json(rows[0], {status: 200});
+    } catch (err) {
+        console.error(err);
+        return NextResponse.json({error: "Internal server error."}, {status: 500});
+    }
+}
+
+export async function DELETE(req: Request) {
+    try {
+        const {searchParams} = new URL(req.url);
+        const id = Number(searchParams.get("id"));
+        if (!id || Number.isNaN(id)) {
+            return NextResponse.json({error: "id is required."}, {status: 400});
+        }
+
+        const existing = await query ("SELECT id FROM patients WHERE id = $1", [id]);
+        if (existing.rowCount === 0) {
+            return NextResponse.json({error: "Patient not found."}, {status: 404});
+        }
+        
+        const hasRegistration = await query("SELECT 1 FROM registrations WHERE patient_id = $1 LIMIT 1", [id]);
+        const rowCount = hasRegistration.rowCount ?? 0;
+        if (rowCount > 0) {
+            return NextResponse.json({error: "Cannot delete a patient with existing registrations."}, {status: 409});
+        }
+
+        const {rows} = await query("DELETE FROM patients WHERE id = $1 RETURNING *;", [id]);
+        return NextResponse.json(rows[0], {status: 200});
+
+    } catch (err) {
+        console.error(err);
+        return NextResponse.json({error: "Internal server error."}, {status: 500})
     }
 }

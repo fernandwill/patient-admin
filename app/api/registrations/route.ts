@@ -112,12 +112,12 @@ export async function PATCH(req: Request) {
             return NextResponse.json({error: "id is required"}, {status: 400});
         }
 
-        const existing = await query("SELECT id, patient_id FROM registrations WHERE id = $1", [registrationId]);
-        if (existing.rowCount === 0) {
+        const existingRegistration = await query("SELECT id, patient_id FROM registrations WHERE id = $1", [registrationId]);
+        if (existingRegistration.rowCount === 0) {
             return NextResponse.json({error: "Registration not found"}, {status: 404});
         }
 
-        const patientId = existing.rows[0].patient_id;
+        const patientId = existingRegistration.rows[0].patient_id;
         const patient = await query("SELECT id FROM patients WHERE id = $1 AND deleted_at IS NULL", [patientId]);
         if (patient.rowCount === 0) {
             return NextResponse.json({error: "Patient not found or deleted"}, {status: 404});
@@ -132,6 +132,87 @@ export async function PATCH(req: Request) {
         `;
 
         const {rows} = await query(update, [deletedAt, registrationId]);
+        return NextResponse.json(rows[0], {status: 200});
+    } catch (err) {
+        console.error(err);
+        return NextResponse.json({error: "Internal server error."}, {status: 500});
+    }
+}
+
+export async function PUT(req: Request) {
+    try {
+        const body = await req.json();
+        const {id, patientId, registrationDate, notes} = body || {};
+        const registrationId = Number(id);
+        
+        if (!registrationId || Number.isNaN(registrationId)) {
+            return NextResponse.json({error: "id is required."}, {status: 400});
+        }
+
+        const existingRegistration = await query("SELECT id, patient_id, deleted_at FROM registrations WHERE id = $1", [registrationId]);
+        if (existingRegistration.rowCount === 0) {
+            return NextResponse.json({error: "Registration not found."}, {status: 404});
+        }
+        if (existingRegistration.rows[0].deleted_at) {
+            return NextResponse.json({error: "Registration is already deleted."}, {status: 400});
+        }
+
+        const fields: string[] = [];
+        const params: any[] = [];
+        let index = 1;
+
+        if (patientId) {
+            const patient = await query("SELECT id FROM patients WHERE id = $1 AND deleted_at IS NULL", [patientId]);
+            if (patient.rowCount === 0) {
+                return NextResponse.json({error: "Patient not found."}, {status: 404});
+            }
+            fields.push(`patient_id = $${index}`);
+            params.push(patientId);
+            index ++;
+        }
+
+        if (registrationDate) {
+            fields.push(`registration_date = $${index}`);
+            params.push(registrationDate);
+            index ++;
+        }
+
+        if (notes !== undefined) {
+            fields.push(`notes = $${index}`);
+            params.push(notes ?? null);
+            index ++;
+        }
+
+        if (fields.length === 0) {
+            return NextResponse.json({error: "No fields to update."}, {status: 400});
+        }
+
+        fields.push("updated_at = NOW()");
+        const sql = `UPDATE registrations SET ${fields.join(", ")} WHERE id = $${index} RETURNING *;`;
+        params.push(registrationId);
+
+        const {rows} = await query(sql, params);
+        return NextResponse.json(rows[0], {status: 200});
+    } catch (err) {
+        console.error(err);
+        return NextResponse.json({error: "Internal server error."}, {status: 500});
+    }
+}
+
+export async function DELETE(req: Request) {
+    try {
+        const {searchParams} =  new URL(req.url);
+        const id = Number(searchParams.get("id"));
+        if (!id || Number.isNaN(id)) {
+            return NextResponse.json({error: "id is required."}, {status: 400});
+        }
+
+        const existingRegistration = await query("SELECT id FROM registrations WHERE id = $1", [id]);
+        if (existingRegistration.rowCount === 0) {
+            return NextResponse.json({error: "Registration not found."}, {status: 404});
+        }
+
+        const {rows} = await query("DELETE FROM registrations WHERE id = $1 RETURNING *;", [id]);
         return NextResponse.json(rows[0], {status: 200});
     } catch (err) {
         console.error(err);

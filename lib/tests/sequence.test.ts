@@ -1,4 +1,4 @@
-import {describe, it, expect, vi, beforeEach} from "vitest";
+import {describe, it, expect, vi, afterEach, beforeEach} from "vitest";
 import {generateSequence} from "../sequence";
 import {getClient} from "../db";
 
@@ -10,12 +10,18 @@ describe("generateSequence", () => {
     const mockClient = {
             query: vi.fn(),
             release: vi.fn(),
-        };
+        };    
 
     beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2025-12-12T00:00:00Z"));
         vi.clearAllMocks();
         (getClient as ReturnType<typeof vi.fn>).mockResolvedValue(mockClient);
     });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    })
 
     it("should generate YYMMDD001 for first RM", async () => {
         mockClient.query.mockResolvedValue({rows: [{last_value: 1}]});

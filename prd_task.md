@@ -55,9 +55,9 @@ Note: Include deletedAt field for Soft Delete logic.
 
 [x] Create Utility Function: generateSequence(type: 'RM' | 'REG') to handle the YYMMDD + increment logic.
 
-[/] Create CRUD API handlers for Patients (GET, POST, PATCH, DELETE).
+ [x] Create CRUD API handlers for Patients (GET, POST, PUT, PATCH, DELETE).
 
-[/] Create CRUD API handlers for Registrations.
+ [x] Create CRUD API handlers for Registrations (GET, POST, PUT, PATCH, DELETE).
 
 ## Phase 3: Frontend Implementation
 [ ] Patient Page:
