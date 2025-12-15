@@ -29,7 +29,8 @@ export async function POST(req: Request) {
         const registrationNo = await generateSequence("REG"); // wait for new daily YYMMDD +  6 digit number to be generated
 
         const insert = `INSERT INTO registrations (registration_no, patient_id, registration_date, notes) VALUES ($1, $2, $3, $4) RETURNING *;`;
-
+        
+    try {
         const {rows} = await query(insert, [
             registrationNo,
             patientId,
@@ -38,10 +39,18 @@ export async function POST(req: Request) {
         ]);
         return NextResponse.json(rows[0], {status: 201});
     } catch (err) {
+        const errCode = err as {code?: string};
+        if (errCode?.code === "23505") {
+            return NextResponse.json({error: "Registration number already exists."}, {status: 409});
+            } 
+        throw err;
+        }
+    } catch (err) {
         console.error(err);
-        return NextResponse.json({error: "Internal server error."}, {status: 500});
+        return NextResponse.json({error: "Internal server error."}, {status: 500})
     }
 }
+
 
 export async function GET(req: Request) {
     try {
