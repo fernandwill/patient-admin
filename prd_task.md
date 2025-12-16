@@ -51,13 +51,13 @@ Note: Include deletedAt field for Soft Delete logic.
 [ ] Setup UI Layout (Sidebar, Navbar) mimicking a Dashboard.
 
 ## Phase 2: Backend Logic (API Routes)
-[ ] Create API for Image Upload (store in /public/uploads or Cloudinary).
+[x] Create API for Image Upload (Cloudinary multipart upload with MIME+magic+5MB cap).
 
 [x] Create Utility Function: generateSequence(type: 'RM' | 'REG') to handle the YYMMDD + increment logic.
 
- [x] Create CRUD API handlers for Patients (GET, POST, PUT, PATCH, DELETE).
+[x] Create CRUD API handlers for Patients (GET, POST, PUT, PATCH, DELETE).
 
- [x] Create CRUD API handlers for Registrations (GET, POST, PUT, PATCH, DELETE).
+[x] Create CRUD API handlers for Registrations (GET, POST, PUT, PATCH, DELETE).
 
 ## Phase 3: Frontend Implementation
 [ ] Patient Page:
