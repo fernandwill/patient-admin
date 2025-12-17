@@ -46,9 +46,11 @@ PDF: Must include a custom Letterhead (Kop Surat) at the top.
 
 [x] Schema Definition: Define Patient and Registration models.
 
+[x] Add gender field to patients schema (DB + init SQL).
+
 Note: Include deletedAt field for Soft Delete logic.
 
-[ ] Setup UI Layout (Sidebar, Navbar) mimicking a Dashboard.
+[x] Setup UI Layout (Sidebar, Navbar) mimicking a Dashboard.
 
 ## Phase 2: Backend Logic (API Routes)
 [x] Create API for Image Upload (Cloudinary multipart upload with MIME+magic+5MB cap).
@@ -57,26 +59,32 @@ Note: Include deletedAt field for Soft Delete logic.
 
 [x] Create CRUD API handlers for Patients (GET, POST, PUT, PATCH, DELETE).
 
+[x] Extend Patients API: gender support + GET by id for edit page.
+
 [x] Create CRUD API handlers for Registrations (GET, POST, PUT, PATCH, DELETE).
 
 ## Phase 3: Frontend Implementation
-[ ] Patient Page:
+[x] Patient Page:
 
-[ ] Form with Validation (React Hook Form).
+[x] Wire Patients list + create/edit form to API (fetch + submit).
 
-[ ] Image Upload Input.
+[x] Form with Validation (React Hook Form).
 
-[ ] Table with Soft Delete action (Toggle deletedAt).
+[x] Image Upload Input.
 
-[ ] Registration Page:
+[x] Table with Soft Delete action (Toggle deletedAt).
 
-[ ] Lookup input to select existing Patient (by No RM).
+[x] Registration Page:
 
-[ ] Auto-fill Registration Number on load.
+[x] Wire Registrations list + create form to API (GET + POST).
 
-[ ] Search Feature:
+[x] Lookup input to select existing Patient (by Name or No RM) (API-backed).
 
-[ ] Implement debounced search bar querying the API.
+[x] Auto-fill Registration Number on load.
+
+[x] Search Feature:
+
+[x] Implement debounced search bar querying the API.
 
 ## Phase 4: Exports
 [ ] Excel: Implement xlsx library to dump filtered JSON to Excel.

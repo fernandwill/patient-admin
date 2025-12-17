@@ -2,18 +2,25 @@
 import {query} from "@/lib/db";
 import {generateSequence} from "@/lib/sequence";
 
+const ALLOWED_GENDER = new Set(["Male", "Female"]);
+
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const {fullName, dateOfBirth, phone, address, photoUrl} = body || {};
+        const {fullName, dateOfBirth, phone, address, photoUrl, gender} = body || {};
 
         if (!fullName || !dateOfBirth) {
             return NextResponse.json({error: "fullName and dateOfBirth are required."}, {status: 400});
         }
+
+        const patientGender = typeof gender === "string" ? gender.trim() : null;
+        if (patientGender && !ALLOWED_GENDER.has(patientGender)) {
+            return NextResponse.json({error: "Gender must be male or female."}, {status: 400});
+        }
         
         const medicalRecordNo = await generateSequence("RM"); // wait for daily YYMMDD + 3 digit number to be generated
-        const insert = `INSERT INTO patients (medical_record_no, full_name, date_of_birth, phone, address, photo_url) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;`;
-        const {rows} = await query(insert, [medicalRecordNo, fullName, dateOfBirth, phone ?? null, address ?? null, photoUrl ?? null]);
+        const insert = `INSERT INTO patients (medical_record_no, full_name, date_of_birth, phone, address, photo_url, gender) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *;`;
+        const {rows} = await query(insert, [medicalRecordNo, fullName, dateOfBirth, phone ?? null, address ?? null, photoUrl ?? null, patientGender]);
         return NextResponse.json(rows[0], {status: 201});
     } catch (err) {
         console.error(err);
@@ -27,29 +34,41 @@ export async function GET(req: Request) {
         const name = searchParams.get("name");
         const dob = searchParams.get("dob");
         const rm = searchParams.get("rm");
+        const idParam = searchParams.get("id");
+        const id = idParam ? Number(idParam) : null;
         const limitParam = Number(searchParams.get("limit") ?? "100");
         const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 200) : 100;
 
-        const conditions: string[] = ["deleted_at IS NULL"];
+        const conditions: string[] = ["p.deleted_at IS NULL"];
         const params: any[] = [];
         let index = 1;
 
+        if (idParam && (!Number.isFinite(id) || id === 0)) {
+            return NextResponse.json({error: "Invalid id parameter."}, {status: 400});
+        }
+
+        if (id) {
+            conditions.push(`p.id = $${index}`);
+            params.push(id);
+            index++;
+        }
+
         if (name) {
-            conditions.push(`full_name ILIKE $${index}`);
+            conditions.push(`p.full_name ILIKE $${index}`);
             params.push(`%${name}%`);
-            index += 1;
+            index++;
         }
 
         if (dob) {
-            conditions.push(`date_of_birth = $${index}`);
+            conditions.push(`p.date_of_birth = $${index}`);
             params.push(dob);
-            index += 1;
+            index++;
         }
 
         if (rm) {
-            conditions.push(`medical_record_no ILIKE $${index}`);
+            conditions.push(`p.medical_record_no ILIKE $${index}`);
             params.push(`%${rm}%`);
-            index += 1;
+            index++;
         }
 
         const whereClause = conditions.join(" AND ");
@@ -103,7 +122,7 @@ export async function PATCH(req: Request) {
 export async function PUT(req: Request) {
     try {
         const body = await req.json();
-        const {id, fullName, dateOfBirth, phone, address, photoUrl} = body || {};
+        const {id, fullName, dateOfBirth, phone, address, photoUrl, gender} = body || {};
         const patientId = Number(id);
         if (!patientId || Number.isNaN(patientId)) {
             return NextResponse.json({error: "id is required."}, {status: 400});
@@ -121,6 +140,7 @@ export async function PUT(req: Request) {
         const params: any[] = [];
         let index = 1;
         const name = fullName?.trim();
+        const patientGender = typeof gender === "string" ? gender.trim() : null;
 
         if (name) {
             fields.push(`full_name = $${index}`);
@@ -145,6 +165,14 @@ export async function PUT(req: Request) {
         if (photoUrl !== undefined) {
             fields.push(`photo_url = $${index}`);
             params.push(photoUrl ?? null);
+            index++;
+        }
+        if (gender !== undefined) {
+            if (patientGender && !ALLOWED_GENDER.has(patientGender)) {
+                return NextResponse.json({error: "Gender must be male or female."}, {status: 400});
+            }
+            fields.push(`gender = $${index}`);
+            params.push(patientGender);
             index++;
         }
         if (fields.length === 0) {

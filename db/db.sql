@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS patients (
     medical_record_no VARCHAR(32) NOT NULL UNIQUE,
     full_name TEXT NOT NULL,
     date_of_birth DATE NOT NULL,
+    gender VARCHAR(16) CHECK (gender IN ('Male','Female')),
     phone TEXT,
     address TEXT,
     photo_url TEXT,
