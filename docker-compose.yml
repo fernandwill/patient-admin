@@ -36,3 +36,10 @@ services:
 volumes:
   postgres_data:
     driver: local
+
+## Start with docker compose up -d --build
+## Check if container is up docker compose ps
+## Check if postgres is healthy docker compose logs postgres
+## Check if web is healthy docker compose logs web
+## Stop with docker compose stop 
+## Stop with removing container docker compose down

@@ -15,12 +15,14 @@ export default function PatientsPage() {
         phone: string | null;
         address: string | null;
         photo_url: string | null;
+        deleted_at: string | null;
     }
 
     const [patients, setPatients] = useState<Patient[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showDeleted, setShowDeleted] = useState(false);
 
     const buildSearchParams = (raw: string) => {
         const trimmed = raw.trim();
@@ -55,6 +57,9 @@ export default function PatientsPage() {
 
             try {
                 const params = buildSearchParams(searchQuery);
+                if (showDeleted) {
+                    params.set("includeDeleted", "true");
+                }
                 const url = params.toString() ? `/api/patients?${params}` : "/api/patients";
                 const response = await fetch(url, {signal: controller.signal});
                 const payload = await response.json().catch(() => null);
@@ -77,14 +82,15 @@ export default function PatientsPage() {
         return () => {
             controller.abort();
         }
-    }, [searchQuery]);
+    }, [searchQuery, showDeleted]);
 
     const handleSearch = (value: string) => {
         setSearchQuery(value);
     }
 
-    const handleSoftDelete = async (id: number) => {
-        if (!window.confirm("Soft delete this patient?")) return;
+    const handleSoftDelete = async (id: number, deleted: boolean) => {
+        const actionLabel = deleted ? "Soft delete" : "Restore";
+        if (!window.confirm(`${actionLabel} this patient?`)) return;
 
         setError(null);
 
@@ -94,15 +100,21 @@ export default function PatientsPage() {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({id, deleted: true}),
+                body: JSON.stringify({id, deleted}),
             });
 
+            const payload = await response.json().catch(() => null); 
+
             if (!response.ok) {
-                const payload = await response.json().catch(() => null); 
                 const message = payload?.error ?? `Request failed (${response.status})`;
                 throw new Error(message);
             }
-            setPatients((prev) => prev.filter((patient) => patient.id !== id));
+            setPatients((prev) => {
+                if (!showDeleted && deleted === true) { 
+                return prev.filter((patient) => patient.id !== id);
+                }
+                return prev.map((patient) => (patient.id === id ? payload : patient))
+            });
         } catch (err) {
             setError(err instanceof Error ? err.message : "Unknown error.");
         }
@@ -115,6 +127,10 @@ export default function PatientsPage() {
                     <h3 className="text-lg font-semibold text-gray-800">Patient List</h3>
                     <div className="flex space-x-2">
                         <SearchBar onSearch={handleSearch} placeholder="Search Name, RM, DOB..." />
+                        <label className="flex items-center gap-2 text-sm text-gray-700">
+                            <input type="checkbox" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />
+                            Show deleted patients
+                        </label>
                         <Link href="/patients/create" className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 transition-colors flex items-center">
                             <i className="fas fa-plus mr-1"></i> Add New
                         </Link>
@@ -151,8 +167,20 @@ export default function PatientsPage() {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.gender ?? "-"}</td>                                                                                
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.address ?? "-"}</td>                                                                               
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"> 
-                                            <Link href={`/patients/${patient.id}`} className="text-blue-600 hover:text-blue-900 mr-3"><i className="fas fa-edit"></i></Link>
-                                            <button type="button" className="text-red-600 hover:text-red-900" onClick={() => handleSoftDelete(patient.id)}><i className="fas fa-trash"></i></button>
+                                            {patient.deleted_at ? (
+                                                <button type="button" className="text-green-600 hover:text-green-900" onClick={() => handleSoftDelete(patient.id, false)}>
+                                                    <i className="fas fa-undo"></i>
+                                                </button>
+                                            ) : (
+                                                <>
+                                                <Link href={`/patients/${patient.id}`} className="text-blue-600 hover:text-blue-900 mr-3">
+                                                    <i className="fas fa-edit"></i>
+                                                </Link>
+                                                <button type="button" className="text-red-600 hover:text-red-900" onClick={() => handleSoftDelete(patient.id, true)}>
+                                                    <i className="fas fa-trash"></i>
+                                                </button>
+                                                </>
+                                            )}
                                         </td>
                                     </tr>
                                 ))

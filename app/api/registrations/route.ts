@@ -62,39 +62,40 @@ export async function GET(req: Request) {
         const end = searchParams.get("end");
         const limitParam = Number(searchParams.get("limit") ?? "100");
         const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 200) : 100;
+        const includeDeleted = searchParams.get("includeDeleted") === "true";
 
-        const conditions: string[] = ["r.deleted_at IS NULL", "p.deleted_at IS NULL"];
+        const conditions: string[] = includeDeleted ? ["p.deleted_at IS NULL"] : ["r.deleted_at IS NULL", "p.deleted_at IS NULL"];
         const params: any[] = [];
         let index = 1;
 
         if (reg) {
             conditions.push(`r.registration_no ILIKE $${index}`);
             params.push(`%${reg}%`);
-            index += 1;
+            index ++;
         }
 
         if (rm) {
             conditions.push(`p.medical_record_no ILIKE $${index}`);
             params.push(`%${rm}%`);
-            index += 1;
+            index ++;
         }
 
         if (name) {
             conditions.push(`p.full_name ILIKE $${index}`);
             params.push(`%${name}%`);
-            index += 1;
+            index ++;
         }
 
         if (start) {
             conditions.push(`r.registration_date >= $${index}`);
             params.push(start);
-            index += 1;
+            index ++;
         }
 
         if (end) {
             conditions.push(`r.registration_date <= $${index}`);
             params.push(end);
-            index += 1;
+            index ++;
         }
 
         const whereClause = conditions.join(" AND ");

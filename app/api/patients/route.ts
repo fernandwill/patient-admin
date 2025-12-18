@@ -38,8 +38,9 @@ export async function GET(req: Request) {
         const id = idParam ? Number(idParam) : null;
         const limitParam = Number(searchParams.get("limit") ?? "100");
         const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 200) : 100;
+        const includeDeleted = searchParams.get("includeDeleted") === "true";
 
-        const conditions: string[] = ["p.deleted_at IS NULL"];
+        const conditions: string[] = includeDeleted ? ["1=1"] : ["p.deleted_at IS NULL"];
         const params: any[] = [];
         let index = 1;
 

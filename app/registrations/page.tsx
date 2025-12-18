@@ -13,12 +13,14 @@ export default function RegistrationsPage() {
         full_name: string;
         medical_record_no: string;
         notes: string | null;
+        deleted_at: string | null;
     }
 
     const [registrations, setRegistrations] = useState<Registration[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showDeleted, setShowDeleted] = useState(false);
 
     const buildSearchParams = (raw: string) => {
         const trimmed = raw.trim();
@@ -53,10 +55,12 @@ export default function RegistrationsPage() {
 
             try {
                 const params = buildSearchParams(searchQuery);
+                if (showDeleted) {
+                    params.set("includeDeleted", "true");
+                }
                 const url = params.toString() ? `/api/registrations?${params}` : "/api/registrations";
                 const response = await fetch(url, {signal: controller.signal});
                 const payload = await response.json().catch(() => null);
-
                 if (!response.ok) {
                     const message = payload?.error ?? `Request failed (${response.status})`;
                     throw new Error(message);
@@ -74,14 +78,15 @@ export default function RegistrationsPage() {
         loadRegistrations();
 
         return () => controller.abort();
-    }, [searchQuery])
+    }, [searchQuery, showDeleted])
 
     const handleSearch = (query: string) => {
         setSearchQuery(query);
     };
 
-    const handleDelete = async (id: number) => {
-        if (!window.confirm("Soft delete this registration?")) return;
+    const handleSoftDelete = async (id: number, deleted: boolean) => {
+        const actionLabel = deleted ? "Soft delete" : "Restore";
+        if (!window.confirm(`${actionLabel} this registration?`)) return;
 
         setError(null);
 
@@ -91,15 +96,21 @@ export default function RegistrationsPage() {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({id, deleted: true})
+                body: JSON.stringify({id, deleted})
             });
 
+            const payload = await response.json().catch(() => null);
+
             if (!response.ok) {
-                const payload = await response.json().catch(() => null);
                 const message = payload?.error ?? `Request failed (${response.status})`;
                 throw new Error(message);
             }
-            setRegistrations((prev) => prev.filter((reg) => reg.id !== id));
+            setRegistrations((prev) => {
+                if (!showDeleted && deleted === true) {
+                    return prev.filter((reg) => reg.id !== id);
+                }
+                return prev.map((reg) => (reg.id === id ? {...reg, ...payload} : reg));
+            });
         } catch (err) {
             setError(err instanceof Error ? err.message : "Unknown error.");
         }
@@ -112,6 +123,10 @@ export default function RegistrationsPage() {
                     <h3 className="text-lg font-semibold text-gray-800">Registration List</h3>
                     <div className="flex space-x-2">
                         <SearchBar onSearch={handleSearch} placeholder="Search Reg No, Name, RM..." />
+                        <label className="flex items-center gap-2 text-sm text-gray-700">
+                            <input type="checkbox" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />
+                            Show deleted registrations
+                        </label>
                         <Link href="/registrations/create" className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 transition-colors flex items-center">
                             <i className="fas fa-plus mr-1"></i> New Registration
                         </Link>
@@ -147,9 +162,21 @@ export default function RegistrationsPage() {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{reg.full_name}</td>                                                                                            
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.medical_record_no}</td>                                                                                    
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.notes ?? "-"}</td>                                                                                         
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button className="text-blue-600 hover:text-blue-900 mr-3"><i className="fas fa-eye"></i></button>
-                                            <button className="text-red-600 hover:text-red-900" onClick={() => handleDelete(reg.id)}><i className="fas fa-trash"></i></button>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"> 
+                                            {reg.deleted_at ? (
+                                                <button type="button" className="text-green-600 hover:text-green-900" onClick={() => handleSoftDelete(reg.id, false)}>
+                                                    <i className="fas fa-undo"></i>
+                                                </button>
+                                            ) : (
+                                                <>
+                                                <Link href={`/registrations/${reg.id}`} className="text-blue-600 hover:text-blue-900 mr-3">
+                                                    <i className="fas fa-edit"></i>
+                                                </Link>
+                                                <button type="button" className="text-red-600 hover:text-red-900" onClick={() => handleSoftDelete(reg.id, true)}>
+                                                    <i className="fas fa-trash"></i>
+                                                </button>
+                                                </>
+                                            )}
                                         </td>
                                     </tr>
                                 ))
