@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import ContentWrapper from '@/components/layout/ContentWrapper';
 import PatientForm from '@/components/patients/PatientForm';
+import { apiFetch } from '@/lib/api';
 
 type PatientFormData = {
     id: number;
@@ -33,7 +34,7 @@ export default function EditPatientPage() {
                 if (!id) {
                     throw new Error("Missing patient id.");
                 }
-                const response = await fetch(`/api/patients?id=${id}`, {
+                const response = await apiFetch(`/api/patients?id=${id}`, {
                     signal: controller.signal,
                 });
 

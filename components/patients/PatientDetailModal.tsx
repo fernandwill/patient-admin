@@ -1,6 +1,7 @@
 "use client";
 
 import Modal from "@/components/ui/Modal";
+import { formatDoB } from "@/lib/formatters";
 
 type Patient = {
     id: number;
@@ -20,14 +21,6 @@ interface PatientDetailModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
-
-const formatDate = (value: string | null) => {
-    if (!value) return "-";
-    const date = new Date(value);
-    const pad2 = (n: number) => String(n).padStart(2, "0");
-    if (Number.isNaN(date.getTime())) return value;
-    return `${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}-${date.getFullYear()}`;
-};
 
 const PatientDetailModal = ({ patient, isOpen, onClose }: PatientDetailModalProps) => {
     if (!patient) return null;
@@ -61,7 +54,7 @@ const PatientDetailModal = ({ patient, isOpen, onClose }: PatientDetailModalProp
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-gray-500 uppercase">Date of Birth</label>
-                        <p className="mt-1 text-sm text-gray-900">{formatDate(patient.date_of_birth)}</p>
+                        <p className="mt-1 text-sm text-gray-900">{formatDoB(patient.date_of_birth)}</p>
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-gray-500 uppercase">Gender</label>
@@ -73,7 +66,7 @@ const PatientDetailModal = ({ patient, isOpen, onClose }: PatientDetailModalProp
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-gray-500 uppercase">Latest Registration</label>
-                        <p className="mt-1 text-sm text-gray-900">{formatDate(patient.latest_reg_date)}</p>
+                        <p className="mt-1 text-sm text-gray-900">{formatDoB(patient.latest_reg_date)}</p>
                     </div>
                 </div>
                 <div>
@@ -84,7 +77,7 @@ const PatientDetailModal = ({ patient, isOpen, onClose }: PatientDetailModalProp
                     <div className="p-3 bg-red-50 border border-red-200 rounded">
                         <p className="text-sm text-red-700">
                             <i className="fas fa-trash mr-2"></i>
-                            Deleted on {formatDate(patient.deleted_at)}
+                            Deleted on {formatDoB(patient.deleted_at)}
                         </p>
                     </div>
                 )}

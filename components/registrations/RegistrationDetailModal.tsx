@@ -1,6 +1,7 @@
 "use client";
 
 import Modal from "@/components/ui/Modal";
+import { formatRegTime, formatDoB } from "@/lib/formatters";
 
 type Registration = {
     id: number;
@@ -20,22 +21,6 @@ interface RegistrationDetailModalProps {
     onClose: () => void;
 }
 
-const formatDateTime = (value: string | null) => {
-    if (!value) return "-";
-    const date = new Date(value);
-    const pad2 = (n: number) => String(n).padStart(2, "0");
-    if (Number.isNaN(date.getTime())) return value;
-    return `${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}-${date.getFullYear()} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
-};
-
-const formatDate = (value: string | null) => {
-    if (!value) return "-";
-    const date = new Date(value);
-    const pad2 = (n: number) => String(n).padStart(2, "0");
-    if (Number.isNaN(date.getTime())) return value;
-    return `${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}-${date.getFullYear()}`;
-};
-
 const RegistrationDetailModal = ({ registration, isOpen, onClose }: RegistrationDetailModalProps) => {
     if (!registration) return null;
 
@@ -49,7 +34,7 @@ const RegistrationDetailModal = ({ registration, isOpen, onClose }: Registration
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-gray-500 uppercase">Registration Date</label>
-                        <p className="mt-1 text-sm text-gray-900">{formatDateTime(registration.registration_date)}</p>
+                        <p className="mt-1 text-sm text-gray-900">{formatRegTime(registration.registration_date)}</p>
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-gray-500 uppercase">Patient Name</label>
@@ -61,7 +46,7 @@ const RegistrationDetailModal = ({ registration, isOpen, onClose }: Registration
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-gray-500 uppercase">Date of Birth</label>
-                        <p className="mt-1 text-sm text-gray-900">{formatDate(registration.date_of_birth)}</p>
+                        <p className="mt-1 text-sm text-gray-900">{formatDoB(registration.date_of_birth)}</p>
                     </div>
                 </div>
                 {registration.notes && (
@@ -74,7 +59,7 @@ const RegistrationDetailModal = ({ registration, isOpen, onClose }: Registration
                     <div className="p-3 bg-red-50 border border-red-200 rounded">
                         <p className="text-sm text-red-700">
                             <i className="fas fa-trash mr-2"></i>
-                            Deleted on {formatDateTime(registration.deleted_at)}
+                            Deleted on {formatRegTime(registration.deleted_at)}
                         </p>
                     </div>
                 )}

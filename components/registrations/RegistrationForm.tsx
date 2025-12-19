@@ -1,8 +1,9 @@
 "use client";
-import {useState} from "react";
-import {useRouter} from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {useForm} from "react-hook-form";
+import { useForm } from "react-hook-form";
+import { apiFetch } from "@/lib/api";
 
 type RegistrationFormValues = {
     registrationDate: string;
@@ -37,7 +38,7 @@ interface RegistrationFormProps {
 }
 
 const parseNotes = (notes: string | null) => {
-    if (!notes) return {complaint: ""};
+    if (!notes) return { complaint: "" };
 
     const lines = notes.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
     let complaint = "";
@@ -52,10 +53,10 @@ const parseNotes = (notes: string | null) => {
         complaint = notes;
     }
 
-    return {complaint};
+    return { complaint };
 };
 
-const RegistrationForm = ({initialData, isEdit = false}: RegistrationFormProps) => {
+const RegistrationForm = ({ initialData, isEdit = false }: RegistrationFormProps) => {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -64,7 +65,7 @@ const RegistrationForm = ({initialData, isEdit = false}: RegistrationFormProps) 
     const today = new Date().toISOString().split("T")[0];
     const parsed = parseNotes(initialData?.notes ?? null);
 
-    const {register, handleSubmit, formState: {errors}} = useForm<RegistrationFormValues>({
+    const { register, handleSubmit, formState: { errors } } = useForm<RegistrationFormValues>({
         defaultValues: {
             registrationDate: initialData?.registrationDate ?? today,
             complaint: parsed.complaint,
@@ -109,30 +110,30 @@ const RegistrationForm = ({initialData, isEdit = false}: RegistrationFormProps) 
                 baseTime.getSeconds(),
                 0
             ).toISOString();
-             
-            const response = await fetch("/api/registrations", {
+
+            const response = await apiFetch("/api/registrations", {
                 method: isEdit ? "PUT" : "POST",
-                headers: {"Content-Type": "application/json"},
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(
                     isEdit
                         ? {
-                              id: initialData!.id,
-                              patientId: initialData?.patient?.id,
-                              registrationDate: registrationDateTime,
-                              notes: notesParts.length > 0 ? notesParts.join("\n") : null,
-                          }
+                            id: initialData!.id,
+                            patientId: initialData?.patient?.id,
+                            registrationDate: registrationDateTime,
+                            notes: notesParts.length > 0 ? notesParts.join("\n") : null,
+                        }
                         : {
-                              registrationDate: registrationDateTime,
-                              notes: notesParts.length > 0 ? notesParts.join("\n") : null,
-                              patient: {
-                                  fullName: values.patientFullName.trim(),
-                                  dateOfBirth: values.patientDob,
-                                  gender: values.patientGender ? values.patientGender : null,
-                                  phone: values.patientPhone.trim() ? values.patientPhone.trim() : null,
-                                  address: values.patientAddress.trim() ? values.patientAddress.trim() : null,
-                                  photoUrl: null,
-                              },
-                          }
+                            registrationDate: registrationDateTime,
+                            notes: notesParts.length > 0 ? notesParts.join("\n") : null,
+                            patient: {
+                                fullName: values.patientFullName.trim(),
+                                dateOfBirth: values.patientDob,
+                                gender: values.patientGender ? values.patientGender : null,
+                                phone: values.patientPhone.trim() ? values.patientPhone.trim() : null,
+                                address: values.patientAddress.trim() ? values.patientAddress.trim() : null,
+                                photoUrl: null,
+                            },
+                        }
                 ),
             });
 
@@ -156,7 +157,13 @@ const RegistrationForm = ({initialData, isEdit = false}: RegistrationFormProps) 
                     <h3 className="text-lg font-medium text-gray-900">{isEdit ? "Edit Registration" : "New Registration"}</h3>
                     <p className="mt-1 text-sm text-gray-500">{isEdit ? "Edit patient registration." : "Register a patient for a visit."}</p>
                     {errorMessage ? (
-                        <p className="mt-2 text-sm text-red-600">{errorMessage}</p>
+                        <div className="mt-4 p-3 bg-red-50 border-l-4 border-red-400 text-red-700 flex items-center gap-3 animate-in fade-in slide-in-from-top-1">
+                            <i className="fas fa-exclamation-triangle"></i>
+                            <p className="text-sm font-medium">{errorMessage}</p>
+                            <button type="button" onClick={() => setErrorMessage(null)} className="ml-auto text-red-400 hover:text-red-600">
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
                     ) : null}
                 </div>
 
@@ -264,7 +271,7 @@ const RegistrationForm = ({initialData, isEdit = false}: RegistrationFormProps) 
                                     <input
                                         id="patientFullName"
                                         type="text"
-                                        {...register("patientFullName", {required: "Full name is required."})}
+                                        {...register("patientFullName", { required: "Full name is required." })}
                                         className="mt-1 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder:text-gray-400 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
                                     />
                                     {errors.patientFullName ? (
@@ -277,7 +284,7 @@ const RegistrationForm = ({initialData, isEdit = false}: RegistrationFormProps) 
                                     <input
                                         id="patientDob"
                                         type="date"
-                                        {...register("patientDob", {required: "Date of birth is required."})}
+                                        {...register("patientDob", { required: "Date of birth is required." })}
                                         className="mt-1 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder:text-gray-400 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
                                     />
                                     {errors.patientDob ? (
@@ -289,7 +296,7 @@ const RegistrationForm = ({initialData, isEdit = false}: RegistrationFormProps) 
                                     <label htmlFor="patientGender" className="block text-sm font-medium text-gray-700">Gender <span className="text-red-600">*</span></label>
                                     <select
                                         id="patientGender"
-                                        {...register("patientGender", {required: "Gender is required."})}
+                                        {...register("patientGender", { required: "Gender is required." })}
                                         className="mt-1 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder:text-gray-400 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
                                     >
                                         <option value="">Select</option>
@@ -303,14 +310,14 @@ const RegistrationForm = ({initialData, isEdit = false}: RegistrationFormProps) 
 
                                 <div className="sm:col-span-3">
                                     <label htmlFor="registrationDate" className="block text-sm font-medium text-gray-700">Registration Date <span className="text-red-600">*</span></label>
-                                        <div className="mt-1">
-                                            <input
-                                                type="date"
-                                                id="registrationDate"
-                                                {...register("registrationDate", {required: "Registration date is required."})}
-                                                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder:text-gray-400 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
-                                            />
-                                        </div>
+                                    <div className="mt-1">
+                                        <input
+                                            type="date"
+                                            id="registrationDate"
+                                            {...register("registrationDate", { required: "Registration date is required." })}
+                                            className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder:text-gray-400 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+                                        />
+                                    </div>
                                     {errors.registrationDate ? (
                                         <p className="mt-2 text-sm text-red-600">{errors.registrationDate.message}</p>
                                     ) : null}

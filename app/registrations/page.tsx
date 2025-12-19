@@ -4,6 +4,9 @@ import ContentWrapper from "@/components/layout/ContentWrapper";
 import Link from "next/link";
 import SearchBar from "@/components/ui/SearchBar";
 import RegistrationDetailModal from "@/components/registrations/RegistrationDetailModal";
+import ExportModal from "@/components/registrations/ExportModal";
+import { apiFetch } from "@/lib/api";
+import { formatRegTime, formatDoB } from "@/lib/formatters";
 
 export default function RegistrationsPage() {
     type Registration = {
@@ -24,6 +27,7 @@ export default function RegistrationsPage() {
     const [error, setError] = useState<string | null>(null);
     const [showDeleted, setShowDeleted] = useState(false);
     const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
+    const [exportType, setExportType] = useState<"Excel" | "PDF" | null>(null);
 
     const buildSearchParams = (raw: string) => {
         const trimmed = raw.trim();
@@ -51,7 +55,7 @@ export default function RegistrationsPage() {
                     params.set("deletedOnly", "true");
                 }
                 const url = params.toString() ? `/api/registrations?${params}` : "/api/registrations";
-                const response = await fetch(url, { signal: controller.signal });
+                const response = await apiFetch(url, { signal: controller.signal });
                 const payload = await response.json().catch(() => null);
                 if (!response.ok) {
                     const message = payload?.error ?? `Request failed (${response.status})`;
@@ -83,7 +87,7 @@ export default function RegistrationsPage() {
         setError(null);
 
         try {
-            const response = await fetch("/api/registrations", {
+            const response = await apiFetch("/api/registrations", {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json"
@@ -116,7 +120,7 @@ export default function RegistrationsPage() {
         setError(null);
 
         try {
-            const response = await fetch(`/api/registrations?id=${id}`, {
+            const response = await apiFetch(`/api/registrations?id=${id}`, {
                 method: "DELETE",
             });
 
@@ -132,37 +136,37 @@ export default function RegistrationsPage() {
         }
     };
 
-    // format DD-MM-YYYY HH:MM
-    const formatRegTime = (value: string) => {
-        const date = new Date(value);
-        const pad2 = (n: number) => String(n).padStart(2, "0");
-        if (Number.isNaN(date.getTime())) return value;
-        return `${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}-${date.getFullYear()} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
-    }
-
-    const formatDoB = (value: string | null) => {
-        if (!value) return "-";
-        const date = new Date(value);
-        const pad2 = (n: number) => String(n).padStart(2, "0");
-        if (Number.isNaN(date.getTime())) return value;
-        return `${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}-${date.getFullYear()}`;
-    }
-
     return (
         <>
             <ContentWrapper title="Registrations">
                 <div className="bg-white rounded shadow">
-                    <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-                        <div className="flex items-center space-x-4">
+                    <div className="p-4 border-b border-gray-200 flex flex-wrap gap-4 justify-between items-center">
+                        <div className="flex flex-wrap items-center gap-4">
                             <SearchBar onSearch={handleSearch} placeholder="Search..." />
                             <label className="flex items-center gap-2 text-sm text-gray-700">
                                 <input type="checkbox" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />
-                                Show only deleted registrations
+                                Show deleted
                             </label>
                         </div>
-                        <Link href="/registrations/create" className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 transition-colors flex items-center">
-                            <i className="fas fa-plus mr-1"></i> Register
-                        </Link>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setExportType("Excel")}
+                                className="bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700 transition-colors flex items-center"
+                                title="Export to Excel"
+                            >
+                                <i className="fas fa-file-excel mr-1"></i> Excel
+                            </button>
+                            <button
+                                onClick={() => setExportType("PDF")}
+                                className="bg-red-600 text-white px-3 py-1.5 rounded text-sm hover:bg-red-700 transition-colors flex items-center"
+                                title="Export to PDF"
+                            >
+                                <i className="fas fa-file-pdf mr-1"></i> PDF
+                            </button>
+                            <Link href="/registrations/create" className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 transition-colors flex items-center">
+                                <i className="fas fa-plus mr-1"></i> Register
+                            </Link>
+                        </div>
                     </div>
 
                     <div className="overflow-x-auto">
@@ -244,6 +248,14 @@ export default function RegistrationsPage() {
                 isOpen={selectedRegistration !== null}
                 onClose={() => setSelectedRegistration(null)}
             />
+
+            {exportType && (
+                <ExportModal
+                    type={exportType}
+                    isOpen={exportType !== null}
+                    onClose={() => setExportType(null)}
+                />
+            )}
         </>
     );
 }

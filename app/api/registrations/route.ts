@@ -143,10 +143,12 @@ export async function GET(req: Request) {
             orParts.push(`p.medical_record_no ILIKE $${likeIndex}`);
             orParts.push(`r.registration_no ILIKE $${likeIndex}`);
 
-            // If the query looks like a date (YYYY-MM-DD), also search by DOB
-            if (/^\d{4}-\d{2}-\d{2}$/.test(queueTrimmed)) {
+            // If the query looks like a date (DD-MM-YYYY), convert to YYYY-MM-DD and search by DOB
+            if (/^\d{2}-\d{2}-\d{4}$/.test(queueTrimmed)) {
+                const [dd, mm, yyyy] = queueTrimmed.split("-");
+                const isoDate = `${yyyy}-${mm}-${dd}`;
                 const dobIndex = index;
-                params.push(queueTrimmed);
+                params.push(isoDate);
                 index++;
 
                 orParts.push(`p.date_of_birth = $${dobIndex}`);
@@ -192,9 +194,14 @@ export async function GET(req: Request) {
             index++;
         }
 
-        const whereClause = conditions.join(" AND ");
+        const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
         const list = `
-          SELECT r.*, p.full_name, p.medical_record_no, p.date_of_birth, p.gender, p.phone, p.address FROM registrations r JOIN patients p ON p.id = r.patient_id WHERE ${whereClause} ORDER BY r.registration_date DESC LIMIT $${index};
+          SELECT r.*, p.full_name, p.medical_record_no, p.date_of_birth, p.gender, p.phone, p.address 
+          FROM registrations r 
+          JOIN patients p ON p.id = r.patient_id 
+          ${whereClause} 
+          ORDER BY r.registration_date DESC 
+          LIMIT $${index};
         `;
         params.push(limit);
 

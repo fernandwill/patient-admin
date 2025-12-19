@@ -5,6 +5,8 @@ import Link from 'next/link';
 import SearchBar from '@/components/ui/SearchBar';
 import PatientDetailModal from '@/components/patients/PatientDetailModal';
 import { useState, useEffect } from 'react';
+import { apiFetch } from '@/lib/api';
+import { formatRegTime, formatDoB } from '@/lib/formatters';
 
 export default function PatientsPage() {
     type Patient = {
@@ -52,7 +54,7 @@ export default function PatientsPage() {
                     params.set("deletedOnly", "true");
                 }
                 const url = params.toString() ? `/api/patients?${params}` : "/api/patients";
-                const response = await fetch(url, { signal: controller.signal });
+                const response = await apiFetch(url, { signal: controller.signal });
                 const payload = await response.json().catch(() => null);
                 if (!response.ok) {
                     const message = payload?.error ?? `Request failed (${response.status})`;
@@ -86,7 +88,7 @@ export default function PatientsPage() {
         setError(null);
 
         try {
-            const response = await fetch("/api/patients", {
+            const response = await apiFetch("/api/patients", {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json"
@@ -119,7 +121,7 @@ export default function PatientsPage() {
         setError(null);
 
         try {
-            const response = await fetch(`/api/patients?id=${id}`, {
+            const response = await apiFetch(`/api/patients?id=${id}`, {
                 method: "DELETE",
             });
 
@@ -134,23 +136,6 @@ export default function PatientsPage() {
             setError(err instanceof Error ? err.message : "Unknown error.");
         }
     };
-
-    // format DD-MM-YYYY HH:MM
-    const formatRegTime = (value: string | null) => {
-        if (!value) return "-";
-        const date = new Date(value);
-        const pad2 = (n: number) => String(n).padStart(2, "0");
-        if (Number.isNaN(date.getTime())) return value;
-        return `${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}-${date.getFullYear()}`;
-    }
-
-    // format DD-MM-YYYY
-    const formatDoB = (value: string) => {
-        const date = new Date(value);
-        const pad2 = (n: number) => String(n).padStart(2, "0");
-        if (Number.isNaN(date.getTime())) return value;
-        return `${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}-${date.getFullYear()}`;
-    }
 
     return (
         <>

@@ -89,17 +89,17 @@ Note: Include deletedAt field for Soft Delete logic.
 ## TOMORROW codex resume 019b2b60-1a46-7613-add9-acffb25749fd
 
 ## Phase 4: Exports
-[ ] Excel: Implement xlsx library to dump filtered JSON to Excel.
+[x] Excel: Implement xlsx library to dump filtered JSON to Excel.
 
-[ ] PDF: Implement jspdf and jspdf-autotable.
+[x] PDF: Implement jspdf and jspdf-autotable.
 
-[ ] Excel & PDF export: allow export by filtering based on date (start date to end date) and time.
+[x] Excel & PDF export: allow export by filtering based on date (start date to end date) and time.
 
-[ ] Export patient registration list with patient details.
+[x] Export patient registration list with patient details.
 
-[ ] Design the "Kop Surat" (Letterhead) component.
+[x] Design the "Kop Surat" (Letterhead) component.
 
-[ ] Map table data to PDF renderer.
+[x] Map table data to PDF renderer.
 
 ## Phase 5: Finalization
 [ ] Export Database SQL dump (as per requirement).

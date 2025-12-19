@@ -1,29 +1,29 @@
-﻿import {NextResponse} from "next/server";
-import {getClient, query} from "@/lib/db";
-import {generateSequenceWithClient} from "@/lib/sequence";
+﻿import { NextResponse } from "next/server";
+import { getClient, query } from "@/lib/db";
+import { generateSequenceWithClient } from "@/lib/sequence";
 
 const ALLOWED_GENDER = new Set(["Male", "Female"]);
 
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const {fullName, dateOfBirth, phone, address, photoUrl, gender} = body || {};
+        const { fullName, dateOfBirth, phone, address, photoUrl, gender } = body || {};
 
         if (!fullName || !dateOfBirth) {
-            return NextResponse.json({error: "fullName and dateOfBirth are required."}, {status: 400});
+            return NextResponse.json({ error: "fullName and dateOfBirth are required." }, { status: 400 });
         }
 
         const patientGender = typeof gender === "string" ? gender.trim() : null;
         if (patientGender && !ALLOWED_GENDER.has(patientGender)) {
-            return NextResponse.json({error: "Gender must be male or female."}, {status: 400});
+            return NextResponse.json({ error: "Gender must be male or female." }, { status: 400 });
         }
-        
+
         const client = await getClient();
         try {
             await client.query("BEGIN");
             const medicalRecordNo = await generateSequenceWithClient(client, "RM");
             const insert = `INSERT INTO patients (medical_record_no, full_name, date_of_birth, phone, address, photo_url, gender) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *;`;
-            const {rows} = await client.query(insert, [
+            const { rows } = await client.query(insert, [
                 medicalRecordNo,
                 fullName,
                 dateOfBirth,
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
                 patientGender,
             ]);
             await client.query("COMMIT");
-            return NextResponse.json(rows[0], {status: 201});
+            return NextResponse.json(rows[0], { status: 201 });
         } catch (err) {
             await client.query("ROLLBACK");
             throw err;
@@ -42,13 +42,13 @@ export async function POST(req: Request) {
         }
     } catch (err) {
         console.error(err);
-        return NextResponse.json({error: "Internal server error."}, {status: 500});
+        return NextResponse.json({ error: "Internal server error." }, { status: 500 });
     }
 }
 
 export async function GET(req: Request) {
     try {
-        const {searchParams} = new URL(req.url);
+        const { searchParams } = new URL(req.url);
         const queue = searchParams.get("queue");
         const name = searchParams.get("name");
         const dob = searchParams.get("dob");
@@ -70,7 +70,7 @@ export async function GET(req: Request) {
         let index = 1;
 
         if (idParam && (!Number.isFinite(id) || id === 0)) {
-            return NextResponse.json({error: "Invalid id parameter."}, {status: 400});
+            return NextResponse.json({ error: "Invalid id parameter." }, { status: 400 });
         }
 
         if (id) {
@@ -91,9 +91,12 @@ export async function GET(req: Request) {
             orParts.push(`p.medical_record_no ILIKE $${likeIndex}`);
             orParts.push(`r.registration_no ILIKE $${likeIndex}`);
 
-            if (/^\d{4}-\d{2}-\d{2}$/.test(queueTrimmed)) {
+            // If the query looks like a date (DD-MM-YYYY), convert to YYYY-MM-DD and search by DOB
+            if (/^\d{2}-\d{2}-\d{4}$/.test(queueTrimmed)) {
+                const [dd, mm, yyyy] = queueTrimmed.split("-");
+                const isoDate = `${yyyy}-${mm}-${dd}`;
                 const dobIndex = index;
-                params.push(queueTrimmed);
+                params.push(isoDate);
                 index++;
 
                 orParts.push(`p.date_of_birth = $${dobIndex}`);
@@ -125,7 +128,7 @@ export async function GET(req: Request) {
             }
         }
 
-        const whereClause = conditions.join(" AND ");
+        const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
         const list = `
           -- MAX find the latest registration data per patient
           SELECT p.*, MAX(r.registration_date) AS latest_reg_date
@@ -134,7 +137,7 @@ export async function GET(req: Request) {
           -- LEFT JOIN pulls each patient regist (non-deleted one)
           LEFT JOIN registrations r ON r.patient_id = p.id AND r.deleted_at IS NULL
 
-          WHERE ${whereClause}
+          ${whereClause}
           GROUP BY p.id
           
           -- NULLS LAST keep never registered patient at the bottom
@@ -143,51 +146,51 @@ export async function GET(req: Request) {
         `;
         params.push(limit);
 
-        const {rows} = await query(list, params);
-        return NextResponse.json(rows, {status: 200});
+        const { rows } = await query(list, params);
+        return NextResponse.json(rows, { status: 200 });
     } catch (err) {
         console.error(err);
-        return NextResponse.json({error: "Internal server error."}, {status: 500});
+        return NextResponse.json({ error: "Internal server error." }, { status: 500 });
     }
 }
 
 export async function PATCH(req: Request) {
     try {
         const body = await req.json();
-        const {id, deleted} = body || {};
+        const { id, deleted } = body || {};
         const patientId = Number(id);
         if (!patientId || Number.isNaN(patientId)) {
-            return NextResponse.json({error: "id is required,"}, {status: 400});
+            return NextResponse.json({ error: "id is required," }, { status: 400 });
         }
         const existingPatient = await query("SELECT id FROM patients WHERE id = $1", [patientId]);
         if (existingPatient.rowCount === 0) {
-            return NextResponse.json({error: "Patient not found."}, {status: 404});
+            return NextResponse.json({ error: "Patient not found." }, { status: 404 });
         }
         const deletedAt = deleted === true ? new Date().toISOString() : null;
         const update = `UPDATE patients SET deleted_at = $1, updated_at = NOW() WHERE id = $2 RETURNING *;`;
-        const {rows} = await query(update, [deletedAt, patientId]);
-        return NextResponse.json(rows[0], {status: 200});
+        const { rows } = await query(update, [deletedAt, patientId]);
+        return NextResponse.json(rows[0], { status: 200 });
     } catch (err) {
         console.error(err);
-        return NextResponse.json({error: "Internal server error."}, {status: 500});
+        return NextResponse.json({ error: "Internal server error." }, { status: 500 });
     }
 }
 
 export async function PUT(req: Request) {
     try {
         const body = await req.json();
-        const {id, fullName, dateOfBirth, phone, address, photoUrl, gender} = body || {};
+        const { id, fullName, dateOfBirth, phone, address, photoUrl, gender } = body || {};
         const patientId = Number(id);
         if (!patientId || Number.isNaN(patientId)) {
-            return NextResponse.json({error: "id is required."}, {status: 400});
+            return NextResponse.json({ error: "id is required." }, { status: 400 });
         }
 
         const existingPatient = await query("SELECT id, deleted_at FROM patients WHERE id = $1", [patientId]);
         if (existingPatient.rowCount === 0) {
-            return NextResponse.json({error: "Patient not found."}, {status: 404});
+            return NextResponse.json({ error: "Patient not found." }, { status: 404 });
         }
         if (existingPatient.rows[0].deleted_at) {
-            return NextResponse.json({error: "Cannot update a soft-deleted patient. Please undo the delete."}, {status: 400});
+            return NextResponse.json({ error: "Cannot update a soft-deleted patient. Please undo the delete." }, { status: 400 });
         }
 
         const fields: string[] = [];
@@ -223,52 +226,52 @@ export async function PUT(req: Request) {
         }
         if (gender !== undefined) {
             if (patientGender && !ALLOWED_GENDER.has(patientGender)) {
-                return NextResponse.json({error: "Gender must be male or female."}, {status: 400});
+                return NextResponse.json({ error: "Gender must be male or female." }, { status: 400 });
             }
             fields.push(`gender = $${index}`);
             params.push(patientGender);
             index++;
         }
         if (fields.length === 0) {
-            return NextResponse.json({error: "No fields to update."}, {status: 400});
+            return NextResponse.json({ error: "No fields to update." }, { status: 400 });
         }
-        
+
         fields.push("updated_at = NOW()");
         const sql = `UPDATE patients SET ${fields.join(", ")} WHERE id = $${index} RETURNING *;`;
         params.push(patientId);
 
-        const {rows} = await query(sql, params);
-        return NextResponse.json(rows[0], {status: 200});
+        const { rows } = await query(sql, params);
+        return NextResponse.json(rows[0], { status: 200 });
     } catch (err) {
         console.error(err);
-        return NextResponse.json({error: "Internal server error."}, {status: 500});
+        return NextResponse.json({ error: "Internal server error." }, { status: 500 });
     }
 }
 
 export async function DELETE(req: Request) {
     try {
-        const {searchParams} = new URL(req.url);
+        const { searchParams } = new URL(req.url);
         const id = Number(searchParams.get("id"));
         if (!id || Number.isNaN(id)) {
-            return NextResponse.json({error: "id is required."}, {status: 400});
+            return NextResponse.json({ error: "id is required." }, { status: 400 });
         }
 
-        const existing = await query ("SELECT id FROM patients WHERE id = $1", [id]);
+        const existing = await query("SELECT id FROM patients WHERE id = $1", [id]);
         if (existing.rowCount === 0) {
-            return NextResponse.json({error: "Patient not found."}, {status: 404});
+            return NextResponse.json({ error: "Patient not found." }, { status: 404 });
         }
-        
+
         const hasRegistration = await query("SELECT 1 FROM registrations WHERE patient_id = $1 LIMIT 1", [id]);
         const rowCount = hasRegistration.rowCount ?? 0;
         if (rowCount > 0) {
-            return NextResponse.json({error: "Cannot delete a patient with existing registrations."}, {status: 409});
+            return NextResponse.json({ error: "Cannot delete a patient with existing registrations." }, { status: 409 });
         }
 
-        const {rows} = await query("DELETE FROM patients WHERE id = $1 RETURNING *;", [id]);
-        return NextResponse.json(rows[0], {status: 200});
+        const { rows } = await query("DELETE FROM patients WHERE id = $1 RETURNING *;", [id]);
+        return NextResponse.json(rows[0], { status: 200 });
 
     } catch (err) {
         console.error(err);
-        return NextResponse.json({error: "Internal server error."}, {status: 500})
+        return NextResponse.json({ error: "Internal server error." }, { status: 500 })
     }
 }

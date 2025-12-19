@@ -1,8 +1,9 @@
 "use client";
-import {useRouter} from "next/navigation";
-import {useState} from "react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import Link from "next/link";
-import {useForm} from "react-hook-form";
+import { useForm } from "react-hook-form";
+import { apiFetch } from "@/lib/api";
 
 interface PatientFormProps {
     initialData?: any;
@@ -27,8 +28,8 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
     const [photoUrl, setPhotoUrl] = useState<string | null>(initialData?.photoUrl ?? null);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
-    
-    const {register, handleSubmit, formState: {errors}} = useForm<PatientFormValues>({
+
+    const { register, handleSubmit, formState: { errors } } = useForm<PatientFormValues>({
         defaultValues: {
             name: initialData?.name ?? "",
             dob: initialData?.dob ?? "",
@@ -41,6 +42,7 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
     const onSubmit = async (values: PatientFormValues) => {
         setIsSubmitting(true);
         setErrorMessage(null);
+        setUploadError(null); // Clear any previous upload errors when submitting the whole form
 
         try {
             if (!isEdit) {
@@ -59,9 +61,9 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
                 photoUrl: photoUrl ?? null,
             };
 
-            const response = await fetch("/api/patients", {
+            const response = await apiFetch("/api/patients", {
                 method: "PUT",
-                headers: {"Content-Type": "application/json"},
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
 
@@ -84,6 +86,7 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
         if (!file) return;
 
         setUploadError(null);
+        setErrorMessage(null); // Clear form errors when starting a new upload
 
         if (!ALLOWED_PHOTO_TYPES.has(file.type)) {
             setUploadError("Only JPEG, PNG, or WEBP is allowed.");
@@ -102,7 +105,7 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
             const formData = new FormData();
             formData.append("file", file);
 
-            const response = await fetch("/api/upload", {
+            const response = await apiFetch("/api/upload", {
                 method: "POST",
                 body: formData,
             });
@@ -130,10 +133,16 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
                     <h3 className="text-lg font-medium text-gray-900">Edit Patient</h3>
                     <p className="mt-1 text-sm text-gray-500">Edit patient information.</p>
                     {errorMessage ? (
-                        <p className="mt-2 text-sm text-red-600">{errorMessage}</p>
+                        <div className="mt-4 p-3 bg-red-50 border-l-4 border-red-400 text-red-700 flex items-center gap-3 animate-in fade-in slide-in-from-top-1">
+                            <i className="fas fa-exclamation-triangle"></i>
+                            <p className="text-sm font-medium">{errorMessage}</p>
+                            <button type="button" onClick={() => setErrorMessage(null)} className="ml-auto text-red-400 hover:text-red-600">
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
                     ) : null}
                 </div>
- 
+
                 <div className="p-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                     <div className="sm:col-span-6">
                         <div className="mt-1 grid grid-cols-1 gap-4 sm:grid-cols-6">
@@ -155,7 +164,10 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
                                     </label>
                                 </div>
                                 {uploadError ? (
-                                    <p className="mt-2 text-sm text-red-600">{uploadError}</p>
+                                    <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-red-600 text-xs flex items-center gap-2">
+                                        <i className="fas fa-info-circle"></i>
+                                        <span>{uploadError}</span>
+                                    </div>
                                 ) : null}
                             </div>
 
@@ -175,7 +187,7 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
                                     <input
                                         type="text"
                                         id="name"
-                                        {...register("name", {required: "Full name is required."})}
+                                        {...register("name", { required: "Full name is required." })}
                                         className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder:text-gray-400 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
                                         placeholder="John Doe"
                                     />
@@ -184,14 +196,14 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
                                     ) : null}
                                 </div>
                             </div>
- 
+
                             <div className="sm:col-span-3">
                                 <label htmlFor="dob" className="block text-sm font-medium text-gray-700">Date of Birth <span className="text-red-600">*</span></label>
                                 <div className="mt-1">
                                     <input
                                         type="date"
                                         id="dob"
-                                        {...register("dob", {required: "Date of birth is required."})}
+                                        {...register("dob", { required: "Date of birth is required." })}
                                         className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder:text-gray-400 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
                                     />
                                     {errors.dob ? (
@@ -199,7 +211,7 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
                                     ) : null}
                                 </div>
                             </div>
- 
+
                             <div className="sm:col-span-3">
                                 <label htmlFor="gender" className="block text-sm font-medium text-gray-700">Gender</label>
                                 <div className="mt-1">
@@ -217,7 +229,7 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
                                     ) : null}
                                 </div>
                             </div>
- 
+
                             <div className="sm:col-span-6">
                                 <label htmlFor="address" className="block text-sm font-medium text-gray-700">Address</label>
                                 <div className="mt-1">
@@ -233,7 +245,7 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
                                     ) : null}
                                 </div>
                             </div>
- 
+
                             <div className="sm:col-span-3">
                                 <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Phone Number</label>
                                 <div className="mt-1">
