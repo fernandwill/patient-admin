@@ -1,5 +1,5 @@
 "use client";
-import {useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import ContentWrapper from "@/components/layout/ContentWrapper";
 import Link from "next/link";
 import SearchBar from "@/components/ui/SearchBar";
@@ -60,7 +60,7 @@ export default function RegistrationsPage() {
                     params.set("deletedOnly", "true");
                 }
                 const url = params.toString() ? `/api/registrations?${params}` : "/api/registrations";
-                const response = await fetch(url, {signal: controller.signal});
+                const response = await fetch(url, { signal: controller.signal });
                 const payload = await response.json().catch(() => null);
                 if (!response.ok) {
                     const message = payload?.error ?? `Request failed (${response.status})`;
@@ -68,7 +68,7 @@ export default function RegistrationsPage() {
                 }
                 setRegistrations(Array.isArray(payload) ? payload : []);
             } catch (err) {
-                const name = (err as {name?: string}).name;
+                const name = (err as { name?: string }).name;
                 if (name === "AbortError") return;
                 setError(err instanceof Error ? err.message : "Unknown error.");
             } finally {
@@ -86,7 +86,7 @@ export default function RegistrationsPage() {
     };
 
     const handleSoftDelete = async (id: number, deleted: boolean) => {
-        const actionLabel = deleted ? "Soft delete" : "Restore";
+        const actionLabel = deleted ? "Delete" : "Restore";
         if (!window.confirm(`${actionLabel} this registration?`)) return;
 
         setError(null);
@@ -97,7 +97,7 @@ export default function RegistrationsPage() {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({id, deleted})
+                body: JSON.stringify({ id, deleted })
             });
 
             const payload = await response.json().catch(() => null);
@@ -107,11 +107,35 @@ export default function RegistrationsPage() {
                 throw new Error(message);
             }
             setRegistrations((prev) => {
-                if (!showDeleted && deleted === true) {
+                // When deleting while viewing non-deleted, or restoring while viewing deleted-only, remove from list
+                if ((!showDeleted && deleted === true) || (showDeleted && deleted === false)) {
                     return prev.filter((reg) => reg.id !== id);
                 }
-                return prev.map((reg) => (reg.id === id ? {...reg, ...payload} : reg));
+                return prev.map((reg) => (reg.id === id ? { ...reg, ...payload } : reg));
             });
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Unknown error.");
+        }
+    };
+
+    const handleHardDelete = async (id: number) => {
+        if (!window.confirm("Permanently delete this registration?")) return;
+        if (!window.confirm("This action cannot be undone, are you sure?")) return;
+
+        setError(null);
+
+        try {
+            const response = await fetch(`/api/registrations?id=${id}`, {
+                method: "DELETE",
+            });
+
+            const payload = await response.json().catch(() => null);
+
+            if (!response.ok) {
+                const message = payload?.error ?? `Request failed (${response.status})`;
+                throw new Error(message);
+            }
+            setRegistrations((prev) => prev.filter((reg) => reg.id !== id));
         } catch (err) {
             setError(err instanceof Error ? err.message : "Unknown error.");
         }
@@ -137,17 +161,16 @@ export default function RegistrationsPage() {
         <ContentWrapper title="Registrations">
             <div className="bg-white rounded shadow">
                 <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-                    <h3 className="text-lg font-semibold text-gray-800">Registration List</h3>
-                    <div className="flex space-x-2">
-                        <SearchBar onSearch={handleSearch} placeholder="Search Reg No, Name, RM..." />
+                    <div className="flex items-center space-x-4">
+                        <SearchBar onSearch={handleSearch} placeholder="Search..." />
                         <label className="flex items-center gap-2 text-sm text-gray-700">
                             <input type="checkbox" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />
                             Show only deleted registrations
                         </label>
-                        <Link href="/registrations/create" className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 transition-colors flex items-center">
-                            <i className="fas fa-plus mr-1"></i> Register
-                        </Link>
                     </div>
+                    <Link href="/registrations/create" className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 transition-colors flex items-center">
+                        <i className="fas fa-plus mr-1"></i> Register
+                    </Link>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -167,31 +190,36 @@ export default function RegistrationsPage() {
                                 <tr>
                                     <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">Loading registrations...</td>
                                 </tr>
-                            ): error ? (
+                            ) : error ? (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-4 text-center text-sm text-red-600">{error}</td>
                                 </tr>
-                            ): registrations.length > 0 ? (
+                            ) : registrations.length > 0 ? (
                                 registrations.map((reg) => (
-                                    <tr key={reg.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{reg.registration_no}</td>                                                                          
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatRegTime(reg.registration_date)}</td>                                                                                    
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.full_name}</td>                                                                                            
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDoB(reg.date_of_birth)}</td>                                                                                    
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.medical_record_no}</td>                                                                                         
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"> 
+                                    <tr key={reg.id} className="group hover:bg-gray-50">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{reg.registration_no}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatRegTime(reg.registration_date)}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.full_name}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDoB(reg.date_of_birth)}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.medical_record_no}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                                             {reg.deleted_at ? (
-                                                <button type="button" className="text-green-600 hover:text-green-900" onClick={() => handleSoftDelete(reg.id, false)}>
-                                                    <i className="fas fa-undo"></i>
-                                                </button>
+                                                <>
+                                                    <button type="button" className="text-green-600 hover:text-green-900 mr-3" onClick={() => handleSoftDelete(reg.id, false)}>
+                                                        <i className="fas fa-undo"></i>
+                                                    </button>
+                                                    <button type="button" className="text-red-600 hover:text-red-900" onClick={() => handleHardDelete(reg.id)}>
+                                                        <i className="fas fa-trash"></i>
+                                                    </button>
+                                                </>
                                             ) : (
                                                 <>
-                                                <Link href={`/registrations/${reg.id}`} className="text-blue-600 hover:text-blue-900 mr-3">
-                                                    <i className="fas fa-edit"></i>
-                                                </Link>
-                                                <button type="button" className="text-red-600 hover:text-red-900" onClick={() => handleSoftDelete(reg.id, true)}>
-                                                    <i className="fas fa-trash"></i>
-                                                </button>
+                                                    <Link href={`/registrations/${reg.id}`} className="text-blue-600 hover:text-blue-900 mr-3">
+                                                        <i className="fas fa-edit"></i>
+                                                    </Link>
+                                                    <button type="button" className="text-red-600 hover:text-red-900" onClick={() => handleSoftDelete(reg.id, true)}>
+                                                        <i className="fas fa-trash"></i>
+                                                    </button>
                                                 </>
                                             )}
                                         </td>

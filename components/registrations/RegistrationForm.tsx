@@ -154,7 +154,7 @@ const RegistrationForm = ({initialData, isEdit = false}: RegistrationFormProps) 
             <div className="bg-white rounded shadow-sm">
                 <div className="p-6 border-b border-gray-200">
                     <h3 className="text-lg font-medium text-gray-900">{isEdit ? "Edit Registration" : "New Registration"}</h3>
-                    <p className="mt-1 text-sm text-gray-500">Register a patient for a visit.</p>
+                    <p className="mt-1 text-sm text-gray-500">{isEdit ? "Edit patient registration." : "Register a patient for a visit."}</p>
                     {errorMessage ? (
                         <p className="mt-2 text-sm text-red-600">{errorMessage}</p>
                     ) : null}
@@ -162,26 +162,25 @@ const RegistrationForm = ({initialData, isEdit = false}: RegistrationFormProps) 
 
                 <div className="p-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                     <div className="sm:col-span-6">
-                        <label className="block text-sm font-medium text-gray-700">Patient</label>
                         {isEdit ? (
                             <div className="mt-1 grid grid-cols-1 gap-4 sm:grid-cols-6">
                                 <div className="sm:col-span-3">
-                                    <label className="block text-sm font-medium text-gray-700">Registration Number <span className="text-red-600">*</span></label>
+                                    <label className="block text-sm font-medium text-gray-700">Registration No. <span className="text-red-600">*</span></label>
                                     <input
                                         type="text"
                                         value={initialData?.registrationNo ?? ""}
                                         disabled
-                                        className="mt-1 block w-full rounded-md border border-gray-300 bg-gray-50 p-2 text-sm text-gray-800"
+                                        className="mt-1 block w-full rounded-md border border-gray-300 bg-gray-50 p-2 text-sm text-gray-400"
                                     />
                                 </div>
 
                                 <div className="sm:col-span-3">
-                                    <label className="block text-sm font-medium text-gray-700">Medical Record No</label>
+                                    <label className="block text-sm font-medium text-gray-700">Medical Record No.</label>
                                     <input
                                         type="text"
                                         value={initialData?.patient?.medical_record_no ?? ""}
                                         disabled
-                                        className="mt-1 block w-full rounded-md border border-gray-300 bg-gray-50 p-2 text-sm text-gray-800"
+                                        className="mt-1 block w-full rounded-md border border-gray-300 bg-gray-50 p-2 text-sm text-gray-400"
                                     />
                                 </div>
 
@@ -241,22 +240,22 @@ const RegistrationForm = ({initialData, isEdit = false}: RegistrationFormProps) 
                         ) : (
                             <div className="mt-1 grid grid-cols-1 gap-4 sm:grid-cols-6">
                                 <div className="sm:col-span-3">
-                                    <label className="block text-sm font-medium text-gray-500">Registration Number <span className="text-red-600">*</span></label>
+                                    <label className="block text-sm font-medium text-gray-700">Registration No. <span className="text-red-600">*</span></label>
                                     <input
                                         type="text"
-                                        value="Auto-generated on save."
+                                        value="Auto-generated on registration."
                                         disabled
-                                        className="mt-1 block w-full rounded-md border border-gray-300 bg-gray-50 p-2 text-sm text-gray-800"
+                                        className="mt-1 block w-full rounded-md border border-gray-300 bg-gray-50 p-2 text-sm text-gray-400"
                                     />
                                 </div>
 
                                 <div className="sm:col-span-3">
-                                    <label className="block text-sm font-medium text-gray-500">Medical Record No <span className="text-red-600">*</span></label>
+                                    <label className="block text-sm font-medium text-gray-700">Medical Record No. <span className="text-red-600">*</span></label>
                                     <input
                                         type="text"
-                                        value="Auto-generated on save."
+                                        value="Auto-generated on registration."
                                         disabled
-                                        className="mt-1 block w-full rounded-md border border-gray-300 bg-gray-50 p-2 text-sm text-gray-800"
+                                        className="mt-1 block w-full rounded-md border border-gray-300 bg-gray-50 p-2 text-sm text-gray-400"
                                     />
                                 </div>
 

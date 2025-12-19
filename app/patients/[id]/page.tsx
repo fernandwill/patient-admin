@@ -6,6 +6,7 @@ import PatientForm from '@/components/patients/PatientForm';
 
 type PatientFormData = {
     id: number;
+    medicalRecordNo: string;
     name: string;
     dob: string;
     gender: string;
@@ -51,6 +52,7 @@ export default function EditPatientPage() {
 
                 const mappedPatient: PatientFormData = {
                     id: first.id,
+                    medicalRecordNo: first.medical_record_no ?? "",
                     name: first.full_name ?? "",
                     dob: first.date_of_birth ?? "",
                     gender: first.gender ?? "",
@@ -80,13 +82,19 @@ export default function EditPatientPage() {
         <ContentWrapper title={`Edit Patient #${id ?? ""}`}>
             <div className="max-w-4xl mx-auto">
                 {isLoading ? (
-                    <div className="rounded border border-gray-200 bg-white p-4 text-sm text-gray-500">Loading patient...</div>
+                    <div className="rounded border border-gray-200 bg-white p-4 text-sm text-gray-500">
+                        Loading patient...
+                    </div>
                 ) : error ? (
-                    <div className="rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
+                    <div className="rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                        {error}
+                    </div>
                 ) : patient ? (
                     <PatientForm initialData={patient} isEdit={true} />
                 ) : (
-                    <div className="rounded border border-gray-200 bg-white p-4 text-sm text-gray-500">Patient not found.</div>
+                    <div className="rounded border border-gray-200 bg-white p-4 text-sm text-gray-500">
+                        Patient not found.
+                    </div>
                 )}
             </div>
         </ContentWrapper>
