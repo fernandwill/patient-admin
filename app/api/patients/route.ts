@@ -31,9 +31,11 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
     try {
         const {searchParams} = new URL(req.url);
+        const queue = searchParams.get("queue");
         const name = searchParams.get("name");
         const dob = searchParams.get("dob");
         const rm = searchParams.get("rm");
+        const reg = searchParams.get("reg");
         const idParam = searchParams.get("id");
         const id = idParam ? Number(idParam) : null;
         const limitParam = Number(searchParams.get("limit") ?? "100");
@@ -54,22 +56,50 @@ export async function GET(req: Request) {
             index++;
         }
 
-        if (name) {
-            conditions.push(`p.full_name ILIKE $${index}`);
-            params.push(`%${name}%`);
-            index++;
-        }
+        const queueTrimmed = typeof queue === "string" ? queue.trim() : "";
+        if (queueTrimmed) {
+            const orParts: string[] = [];
 
-        if (dob) {
-            conditions.push(`p.date_of_birth = $${index}`);
-            params.push(dob);
+            const likeIndex = index;
+            params.push(`%${queueTrimmed}%`);
             index++;
-        }
 
-        if (rm) {
-            conditions.push(`p.medical_record_no ILIKE $${index}`);
-            params.push(`%${rm}%`);
-            index++;
+            orParts.push(`p.full_name ILIKE $${likeIndex}`);
+            orParts.push(`p.medical_record_no ILIKE $${likeIndex}`);
+            orParts.push(`r.registration_no ILIKE $${likeIndex}`);
+
+            if (/^\d{4}-\d{2}-\d{2}$/.test(queueTrimmed)) {
+                const dobIndex = index;
+                params.push(queueTrimmed);
+                index++;
+
+                orParts.push(`p.date_of_birth = $${dobIndex}`);
+            }
+            conditions.push(`(${orParts.join(" OR ")})`);
+        } else {
+            if (name) {
+                conditions.push(`p.full_name ILIKE $${index}`);
+                params.push(`%${name}%`);
+                index++;
+            }
+
+            if (dob) {
+                conditions.push(`p.date_of_birth = $${index}`);
+                params.push(dob);
+                index++;
+            }
+
+            if (rm) {
+                conditions.push(`p.medical_record_no ILIKE $${index}`);
+                params.push(`%${rm}%`);
+                index++;
+            }
+
+            if (reg) {
+                conditions.push(`r.registration_no ILIKE $${index}`);
+                params.push(`%${reg}%`);
+                index++;
+            }
         }
 
         const whereClause = conditions.join(" AND ");

@@ -60,6 +60,10 @@ export async function GET(req: Request) {
         const name = searchParams.get("name");
         const start = searchParams.get("start");
         const end = searchParams.get("end");
+        // loading single reg by id
+        const idParam = searchParams.get("id");
+        const id = idParam ? Number(idParam) : null;
+        // loading list of regs
         const limitParam = Number(searchParams.get("limit") ?? "100");
         const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 200) : 100;
         const includeDeleted = searchParams.get("includeDeleted") === "true";
@@ -67,6 +71,16 @@ export async function GET(req: Request) {
         const conditions: string[] = includeDeleted ? ["p.deleted_at IS NULL"] : ["r.deleted_at IS NULL", "p.deleted_at IS NULL"];
         const params: any[] = [];
         let index = 1;
+
+        if (idParam && (!Number.isFinite(id) || id === 0)) {
+            return NextResponse.json({error: "Invalid id parameter."}, {status: 400});
+        }
+
+        if (id) {
+            conditions.push(`r.id = $${index}`);
+            params.push(id);
+            index++;
+        }
 
         if (reg) {
             conditions.push(`r.registration_no ILIKE $${index}`);

@@ -32,19 +32,7 @@ export default function PatientsPage() {
             return params;
         }
 
-        const isDate = /^\d{4}-\d{2}-\d{2}$/.test(trimmed);
-        const isDigits = /^\d+$/.test(trimmed);
-
-        if (isDate) {
-            params.set("dob", trimmed);
-            return params;
-        }
-
-        if (isDigits) {
-            params.set("rm", trimmed);
-            return params;
-        }
-        params.set("name", trimmed);
+        params.set("queue", trimmed);
         return params;
     }
 
@@ -120,13 +108,21 @@ export default function PatientsPage() {
         }
     };
 
+        // format DD-MM-YYYY HH:MM
+    const formatDoB = (value: string) => {
+        const date = new Date(value);
+        const pad2 = (n: number) => String(n).padStart(2, "0");
+        if (Number.isNaN(date.getTime())) return value;
+        return `${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}-${date.getFullYear()}`;
+    }
+
     return (
         <ContentWrapper title="Patients">
             <div className="bg-white rounded shadow">
                 <div className="p-4 border-b border-gray-200 flex justify-between items-center">
                     <h3 className="text-lg font-semibold text-gray-800">Patient List</h3>
                     <div className="flex space-x-2">
-                        <SearchBar onSearch={handleSearch} placeholder="Search Name, RM, DOB..." />
+                        <SearchBar onSearch={handleSearch} placeholder="Search Name, RM, DOB, Reg No..." />
                         <label className="flex items-center gap-2 text-sm text-gray-700">
                             <input type="checkbox" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />
                             Show deleted patients
@@ -163,7 +159,7 @@ export default function PatientsPage() {
                                     <tr key={patient.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{patient.medical_record_no}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{patient.full_name}</td>                                                                                    
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.date_of_birth}</td>                                                                                
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDoB(patient.date_of_birth)}</td>                                                                                
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.gender ?? "-"}</td>                                                                                
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.address ?? "-"}</td>                                                                               
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"> 

@@ -5,12 +5,12 @@ import Link from "next/link";
 import {useForm} from "react-hook-form";
 
 type PatientOption = {
-    id: number,
+    id: number;
     full_name: string;
     medical_record_no: string;
-    date_of_birth: string;
-    gender: string;
-}
+    date_of_birth?: string;
+    gender?: string | null;
+};
 
 type RegistrationFormValues = {
     patientId: string;
@@ -19,22 +19,67 @@ type RegistrationFormValues = {
     doctor: string;
 }
 
-const RegistrationForm = () => {
-    const [patientSearch, setPatientSearch] = useState("");
+type RegistrationFormInitialData = {
+    id: number;
+    patient: {
+        id: number;
+        full_name: string;
+        medical_record_no: string;
+    };
+    registrationDate: string;
+    notes: string | null;
+}
+
+interface RegistrationFormProps {
+    initialData?: RegistrationFormInitialData;
+    isEdit?: boolean;
+}
+
+const parseNotes = (notes: string | null) => {
+    if (!notes) return {doctor: "", complaint: ""};
+
+    const lines = notes.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    let doctor = "";
+    let complaint = "";
+
+    for (const line of lines) {
+        if (line.toLowerCase().startsWith("doctor:")) {
+            doctor = line.slice("Doctor:".length).trim();
+        } else if (line.toLowerCase().startsWith("complaint:")) {
+            complaint = line.slice("Complaint:".length).trim();
+        }
+    }
+
+    if (!doctor && !complaint) {
+        complaint = notes;
+    }
+
+    return {doctor, complaint};
+};
+
+const RegistrationForm = ({initialData, isEdit = false}: RegistrationFormProps) => {
+    const [patientSearch, setPatientSearch] = useState(initialData?.patient ? `${initialData.patient.full_name} (${initialData.patient.medical_record_no})` : "");
     const [searchResults, setSearchResults] = useState<PatientOption[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [searchError, setSearchError] = useState<string | null>(null);
-    const [selectedPatient, setSelectedPatient] = useState<PatientOption | null>(null);
+    const [selectedPatient, setSelectedPatient] = useState<PatientOption | null>(initialData?.patient ? {
+        id: initialData.patient.id,
+        full_name: initialData.patient.full_name,
+        medical_record_no: initialData.patient.medical_record_no,
+    } : null);
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+    const today = new Date().toISOString().split("T")[0];
+    const parsed = parseNotes(initialData?.notes ?? null);
+
     const { register, handleSubmit, formState: { errors }, setValue } = useForm<RegistrationFormValues>({
         defaultValues: {
-            patientId: "",
-            registrationDate: new Date().toISOString().split("T")[0],
-            doctor: "",
-            complaint: "",
+            patientId: initialData?.patient ? initialData.patient.id.toString() : "",
+            registrationDate: initialData?.registrationDate ?? today,
+            doctor: parsed.doctor,
+            complaint: parsed.complaint,
         }
     });
 
@@ -112,22 +157,26 @@ const RegistrationForm = () => {
             if (values.complaint.trim()) {
                 notesParts.push(`Complaint: ${values.complaint.trim()}`);
             }
+            if (isEdit && !initialData?.id) {
+                throw new Error("Missing registration id.");
+            }
             
             const payload = {
+                ...(isEdit ? {id: initialData!.id} : {}),
                 patientId,
                 registrationDate: values.registrationDate,
                 notes: notesParts.length > 0 ? notesParts.join("\n") : null,
             };
 
             const response = await fetch("/api/registrations", {
-                method: "POST",
+                method: isEdit ? "PUT" : "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(payload),
             });
 
             if (!response.ok) {
                 const body = await response.json().catch(() => null);
-                const message = body?.error ?? "Failed to register patient.";
+                const message = body?.error ?? "Failed to save registration.";
                 throw new Error(message);
             }
             router.push("/registrations");
@@ -142,7 +191,7 @@ const RegistrationForm = () => {
         <form onSubmit={handleSubmit(onSubmit)}>
             <div className="bg-white rounded shadow-sm">
                 <div className="p-6 border-b border-gray-200">
-                    <h3 className="text-lg font-medium text-gray-900">New Registration</h3>
+                    <h3 className="text-lg font-medium text-gray-900">{isEdit ? "Edit Registration" : "New Registration"}</h3>
                     <p className="mt-1 text-sm text-gray-500">Register a patient for a visit.</p>
                     {errorMessage ? (
                         <p className="mt-2 text-sm text-red-600">{errorMessage}</p>
@@ -250,7 +299,7 @@ const RegistrationForm = () => {
                         className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         disabled={isSubmitting}
                     >
-                        {isSubmitting ? "Registering..." : "Register"}
+                        {isSubmitting ? (isEdit ? "Saving..." : "Registering...") : (isEdit ? "Save" : "Register")}
                     </button>
                 </div>
             </div>

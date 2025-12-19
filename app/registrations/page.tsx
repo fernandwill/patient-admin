@@ -116,6 +116,14 @@ export default function RegistrationsPage() {
         }
     };
 
+    // format DD-MM-YYYY HH:MM
+    const formatDateTime = (value: string) => {
+        const date = new Date(value);
+        const pad2 = (n: number) => String(n).padStart(2, "0");
+        if (Number.isNaN(date.getTime())) return value;
+        return `${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}-${date.getFullYear()} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+    }
+
     return (
         <ContentWrapper title="Registrations">
             <div className="bg-white rounded shadow">
@@ -158,7 +166,7 @@ export default function RegistrationsPage() {
                                 registrations.map((reg) => (
                                     <tr key={reg.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{reg.registration_no}</td>                                                                          
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.registration_date}</td>                                                                                    
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateTime(reg.registration_date)}</td>                                                                                    
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{reg.full_name}</td>                                                                                            
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.medical_record_no}</td>                                                                                    
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.notes ?? "-"}</td>                                                                                         
