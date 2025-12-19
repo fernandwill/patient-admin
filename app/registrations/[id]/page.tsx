@@ -1,5 +1,6 @@
 "use client";
 import {useEffect, useState} from "react";
+import {useParams} from "next/navigation";
 import RegistrationForm from "@/components/registrations/RegistrationForm";  
 import ContentWrapper from "@/components/layout/ContentWrapper";
 
@@ -13,7 +14,10 @@ type RegistrationApiRow = {
     deleted_at: string | null;
 };
 
-export default function EditRegistrationPage({params}: {params: {id: string}}) {
+export default function EditRegistrationPage() {
+    const params = useParams<{id: string}>();
+    const idParam = params?.id;
+    const id = Array.isArray(idParam) ? idParam[0] : idParam;
     const [registration, setRegistration] = useState<RegistrationApiRow | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -26,11 +30,11 @@ export default function EditRegistrationPage({params}: {params: {id: string}}) {
             setError(null);
 
             try {
-                if (!params?.id) {
+                if (!id) {
                     throw new Error("Missing registration id.");
                 }
 
-                const response = await fetch(`/api/registrations?id=${params.id}`, {
+                const response = await fetch(`/api/registrations?id=${id}`, {
                     signal: controller.signal,
                 });
 
@@ -58,7 +62,7 @@ export default function EditRegistrationPage({params}: {params: {id: string}}) {
         loadRegistration();
 
         return () => controller.abort();
-    }, [params?.id]);
+    }, [id]);
 
     const initialData = registration
         ? {
@@ -74,7 +78,7 @@ export default function EditRegistrationPage({params}: {params: {id: string}}) {
         : undefined;
 
     return (
-        <ContentWrapper title={`Edit Registration #${params.id}`}>
+        <ContentWrapper title={`Edit Registration #${id ?? ""}`}>
             <div className="max-w-4xl mx-auto">
                 {isLoading ? (
                     <div className="rounded border border-gray-200 bg-white p-4 text-sm text-gray-500">

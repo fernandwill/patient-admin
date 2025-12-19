@@ -1,5 +1,6 @@
 "use client";
 import {useEffect, useState} from "react";
+import {useParams} from "next/navigation";
 import ContentWrapper from '@/components/layout/ContentWrapper';
 import PatientForm from '@/components/patients/PatientForm';
 
@@ -13,7 +14,10 @@ type PatientFormData = {
     photoUrl: string | null;
 }
 
-export default function EditPatientPage({ params }: { params: { id: string } }) {
+export default function EditPatientPage() {
+    const params = useParams<{id: string}>();
+    const idParam = params?.id;
+    const id = Array.isArray(idParam) ? idParam[0] : idParam;
     const [patient, setPatient] = useState<PatientFormData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -25,10 +29,10 @@ export default function EditPatientPage({ params }: { params: { id: string } }) 
             setError(null);
 
             try {
-                if (!params?.id) {
+                if (!id) {
                     throw new Error("Missing patient id.");
                 }
-                const response = await fetch(`/api/patients?id=${params.id}`, {
+                const response = await fetch(`/api/patients?id=${id}`, {
                     signal: controller.signal,
                 });
 
@@ -70,10 +74,10 @@ export default function EditPatientPage({ params }: { params: { id: string } }) 
         return () => {
             controller.abort();
         };
-    }, [params?.id]);
+    }, [id]);
 
     return (
-        <ContentWrapper title={`Edit Patient #${params.id}`}>
+        <ContentWrapper title={`Edit Patient #${id ?? ""}`}>
             <div className="max-w-4xl mx-auto">
                 {isLoading ? (
                     <div className="rounded border border-gray-200 bg-white p-4 text-sm text-gray-500">Loading patient...</div>
