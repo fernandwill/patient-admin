@@ -17,15 +17,15 @@ const Sidebar = () => {
                             </Link>
                         </li>
                         <li className="nav-item">
-                            <Link href="/patients" className="nav-link flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md transition-colors">
-                                <i className="nav-icon fas fa-users mr-3"></i>
-                                <p>Patients</p>
+                            <Link href="/registrations" className="nav-link flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md transition-colors">
+                                <i className="nav-icon fas fa-file-medical mr-3"></i>
+                                <p>Patient Registrations</p>
                             </Link>
                         </li>
                         <li className="nav-item">
-                            <Link href="/registrations" className="nav-link flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md transition-colors">
-                                <i className="nav-icon fas fa-file-medical mr-3"></i>
-                                <p>Registrations</p>
+                            <Link href="/patients" className="nav-link flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md transition-colors">
+                                <i className="nav-icon fas fa-users mr-3"></i>
+                                <p>Patient Lists</p>
                             </Link>
                         </li>
                     </ul>

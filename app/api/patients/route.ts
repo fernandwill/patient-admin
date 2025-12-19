@@ -1,6 +1,6 @@
 ﻿import {NextResponse} from "next/server";
-import {query} from "@/lib/db";
-import {generateSequence} from "@/lib/sequence";
+import {getClient, query} from "@/lib/db";
+import {generateSequenceWithClient} from "@/lib/sequence";
 
 const ALLOWED_GENDER = new Set(["Male", "Female"]);
 
@@ -18,10 +18,28 @@ export async function POST(req: Request) {
             return NextResponse.json({error: "Gender must be male or female."}, {status: 400});
         }
         
-        const medicalRecordNo = await generateSequence("RM"); // wait for daily YYMMDD + 3 digit number to be generated
-        const insert = `INSERT INTO patients (medical_record_no, full_name, date_of_birth, phone, address, photo_url, gender) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *;`;
-        const {rows} = await query(insert, [medicalRecordNo, fullName, dateOfBirth, phone ?? null, address ?? null, photoUrl ?? null, patientGender]);
-        return NextResponse.json(rows[0], {status: 201});
+        const client = await getClient();
+        try {
+            await client.query("BEGIN");
+            const medicalRecordNo = await generateSequenceWithClient(client, "RM");
+            const insert = `INSERT INTO patients (medical_record_no, full_name, date_of_birth, phone, address, photo_url, gender) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *;`;
+            const {rows} = await client.query(insert, [
+                medicalRecordNo,
+                fullName,
+                dateOfBirth,
+                phone ?? null,
+                address ?? null,
+                photoUrl ?? null,
+                patientGender,
+            ]);
+            await client.query("COMMIT");
+            return NextResponse.json(rows[0], {status: 201});
+        } catch (err) {
+            await client.query("ROLLBACK");
+            throw err;
+        } finally {
+            client.release();
+        }
     } catch (err) {
         console.error(err);
         return NextResponse.json({error: "Internal server error."}, {status: 500});

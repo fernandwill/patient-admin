@@ -12,6 +12,7 @@ export default function RegistrationsPage() {
         patient_id: number;
         full_name: string;
         medical_record_no: string;
+        date_of_birth: string | null;
         notes: string | null;
         deleted_at: string | null;
     }
@@ -124,6 +125,14 @@ export default function RegistrationsPage() {
         return `${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}-${date.getFullYear()} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
     }
 
+    const formatDob = (value: string | null) => {
+        if (!value) return "-";
+        const date = new Date(value);
+        const pad2 = (n: number) => String(n).padStart(2, "0");
+        if (Number.isNaN(date.getTime())) return value;
+        return `${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}-${date.getFullYear()}`;
+    }
+
     return (
         <ContentWrapper title="Registrations">
             <div className="bg-white rounded shadow">
@@ -146,10 +155,10 @@ export default function RegistrationsPage() {
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reg No</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reg Date</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient Name</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DOB</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No RM</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
@@ -165,11 +174,11 @@ export default function RegistrationsPage() {
                             ): registrations.length > 0 ? (
                                 registrations.map((reg) => (
                                     <tr key={reg.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{reg.registration_no}</td>                                                                          
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{reg.registration_no}</td>                                                                          
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateTime(reg.registration_date)}</td>                                                                                    
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{reg.full_name}</td>                                                                                            
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.medical_record_no}</td>                                                                                    
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.notes ?? "-"}</td>                                                                                         
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.full_name}</td>                                                                                            
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDob(reg.date_of_birth)}</td>                                                                                    
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.medical_record_no}</td>                                                                                         
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"> 
                                             {reg.deleted_at ? (
                                                 <button type="button" className="text-green-600 hover:text-green-900" onClick={() => handleSoftDelete(reg.id, false)}>

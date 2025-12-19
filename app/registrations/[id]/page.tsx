@@ -6,10 +6,15 @@ import ContentWrapper from "@/components/layout/ContentWrapper";
 
 type RegistrationApiRow = {
     id: number;
+    registration_no: string;
     registration_date: string;
     patient_id: number;
     full_name: string | null;
     medical_record_no: string | null;
+    date_of_birth: string | null;
+    gender: string | null;
+    phone: string | null;
+    address: string | null;
     notes: string | null;
     deleted_at: string | null;
 };
@@ -67,12 +72,18 @@ export default function EditRegistrationPage() {
     const initialData = registration
         ? {
             id: registration.id,
+            registrationNo: registration.registration_no ?? "",
             patient: {
                 id: registration.patient_id,
                 full_name: registration.full_name ?? "",
                 medical_record_no: registration.medical_record_no ?? "",
+                date_of_birth: registration.date_of_birth ?? null,
+                gender: registration.gender ?? null,
+                phone: registration.phone ?? null,
+                address: registration.address ?? null,
             },
             registrationDate: (registration.registration_date ?? "").split("T")[0],
+            registrationDateTime: registration.registration_date ?? null,
             notes: registration.notes ?? null,
         }
         : undefined;

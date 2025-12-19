@@ -1,49 +1,90 @@
 ﻿import {NextResponse} from "next/server";
-import {query} from "@/lib/db";
-import {generateSequence} from "@/lib/sequence";
+import {getClient, query} from "@/lib/db";
+import {generateSequenceWithClient} from "@/lib/sequence";
 
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const {patientId, registrationDate, notes} = body || {};
+        const {patientId, registrationDate, notes, registrationNo, patient} = body || {};
 
-        if (!patientId || !registrationDate) {
+        if ((!patientId && !patient) || !registrationDate) {
             return NextResponse.json(
-                {error: "patientId and registrationDate are required."},
+                {error: "patientId (or patient) and registrationDate are required."},
                 {status: 400}
             );
         }
 
-        const checkPatientExist = await query (
-            "SELECT id FROM patients WHERE id = $1 AND deleted_at IS NULL",
-            [patientId]
-        );
-        // api guard to check patient existences
-        if (checkPatientExist.rowCount === 0) {
-            return NextResponse.json(
-                {error: "Patient not found."},
-                {status: 404}
-            );
+        if (registrationNo) {
+            return NextResponse.json({error: "registrationNo is system-generated and cannot be provided."}, {status: 400});
         }
 
-        const registrationNo = await generateSequence("REG"); // wait for new daily YYMMDD +  6 digit number to be generated
+        const client = await getClient();
+        try {
+            await client.query("BEGIN");
 
-        const insert = `INSERT INTO registrations (registration_no, patient_id, registration_date, notes) VALUES ($1, $2, $3, $4) RETURNING *;`;
-        
-    try {
-        const {rows} = await query(insert, [
-            registrationNo,
-            patientId,
-            registrationDate,
-            notes ?? null,
-        ]);
-        return NextResponse.json(rows[0], {status: 201});
-    } catch (err) {
-        const errCode = err as {code?: string};
-        if (errCode?.code === "23505") {
-            return NextResponse.json({error: "Registration number already exists."}, {status: 409});
-            } 
-        throw err;
+            let finalPatientId = Number(patientId);
+
+            if (patient) {
+                const {fullName, dateOfBirth, gender, phone, address, photoUrl} = patient || {};
+                if (!fullName || !dateOfBirth) {
+                    await client.query("ROLLBACK");
+                    return NextResponse.json({error: "patient.fullName and patient.dateOfBirth are required."}, {status: 400});
+                }
+
+                const patientGender = typeof gender === "string" ? gender.trim() : null;
+                if (patientGender && patientGender !== "Male" && patientGender !== "Female") {
+                    await client.query("ROLLBACK");
+                    return NextResponse.json({error: "Gender must be male or female."}, {status: 400});
+                }
+
+                const medicalRecordNo = await generateSequenceWithClient(client, "RM");
+                const insertPatient = `INSERT INTO patients (medical_record_no, full_name, date_of_birth, phone, address, photo_url, gender) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id;`;
+                const patientResult = await client.query(insertPatient, [
+                    medicalRecordNo,
+                    fullName,
+                    dateOfBirth,
+                    phone ?? null,
+                    address ?? null,
+                    photoUrl ?? null,
+                    patientGender,
+                ]);
+                finalPatientId = Number(patientResult.rows[0]?.id);
+            }
+
+            if (!finalPatientId || Number.isNaN(finalPatientId)) {
+                await client.query("ROLLBACK");
+                return NextResponse.json({error: "patientId is required."}, {status: 400});
+            }
+
+            const checkPatientExist = await client.query(
+                "SELECT id FROM patients WHERE id = $1 AND deleted_at IS NULL",
+                [finalPatientId]
+            );
+            if (checkPatientExist.rowCount === 0) {
+                await client.query("ROLLBACK");
+                return NextResponse.json({error: "Patient not found."}, {status: 404});
+            }
+
+            const nextRegistrationNo = await generateSequenceWithClient(client, "REG");
+            const insert = `INSERT INTO registrations (registration_no, patient_id, registration_date, notes) VALUES ($1, $2, $3, $4) RETURNING *;`;
+            const {rows} = await client.query(insert, [
+                nextRegistrationNo,
+                finalPatientId,
+                registrationDate,
+                notes ?? null,
+            ]);
+
+            await client.query("COMMIT");
+            return NextResponse.json(rows[0], {status: 201});
+        } catch (err) {
+            await client.query("ROLLBACK");
+            const errCode = err as {code?: string};
+            if (errCode?.code === "23505") {
+                return NextResponse.json({error: "Registration number already exists."}, {status: 409});
+            }
+            throw err;
+        } finally {
+            client.release();
         }
     } catch (err) {
         console.error(err);
@@ -114,7 +155,7 @@ export async function GET(req: Request) {
 
         const whereClause = conditions.join(" AND ");
         const list = `
-          SELECT r.*, p.full_name, p.medical_record_no FROM registrations r JOIN patients p ON p.id = r.patient_id WHERE ${whereClause} ORDER BY r.registration_date DESC LIMIT $${index};
+          SELECT r.*, p.full_name, p.medical_record_no, p.date_of_birth, p.gender, p.phone, p.address FROM registrations r JOIN patients p ON p.id = r.patient_id WHERE ${whereClause} ORDER BY r.registration_date DESC LIMIT $${index};
         `;
         params.push(limit);
 

@@ -135,6 +135,27 @@ const PatientForm = ({ initialData, isEdit = false }: PatientFormProps) => {
                 </div>
 
                 <div className="p-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                    <div className="sm:col-span-6 flex flex-col items-center">
+                        <label className="block text-sm font-medium text-gray-700">Profile Photo</label>
+                        <div className="mt-3 flex flex-col items-center gap-3">
+                            <span className="inline-block h-24 w-24 rounded-full overflow-hidden bg-gray-100 border border-gray-200">
+                                {photoUrl ? (
+                                    <img src={photoUrl} alt="patient_pp" className="h-full w-full object-cover" />
+                                ) : (
+                                    <svg className="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
+                                )}
+                            </span>
+                            <label className={`inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 ${isUploading ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}>
+                                <input type="file" accept="image/jpeg, image/png, image/webp" className="hidden" onChange={handlePhotoChange} disabled={isUploading} />
+                                {isUploading ? "Uploading..." : "Upload"}
+                            </label>
+                        </div>
+                        {uploadError ? (
+                            <p className="mt-2 text-sm text-red-600">{uploadError}</p>
+                        ) : null}
+                    </div>
                     <div className="sm:col-span-3">
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700">Full Name</label>
                         <div className="mt-1">
@@ -142,7 +163,7 @@ const PatientForm = ({ initialData, isEdit = false }: PatientFormProps) => {
                                 type="text"
                                 id="name"
                                 {...register("name", {required: "Full name is required."})}
-                                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+                                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder:text-gray-400 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
                                 placeholder="John Doe"
                             />
                             {errors.name ? (
@@ -158,7 +179,7 @@ const PatientForm = ({ initialData, isEdit = false }: PatientFormProps) => {
                                 type="date"
                                 id="dob"
                                 {...register("dob", {required: "Date of birth is required."})}
-                                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+                                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder:text-gray-400 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
                             />
                             {errors.dob ? (
                                 <p className="mt-1 text-xs text-red-600">{errors.dob.message}</p>
@@ -172,7 +193,7 @@ const PatientForm = ({ initialData, isEdit = false }: PatientFormProps) => {
                             <select
                                 id="gender"
                                 {...register("gender")}
-                                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+                                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder:text-gray-400 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
                             >
                                 <option value="">Select Gender</option>
                                 <option value="Male">Male</option>
@@ -191,7 +212,7 @@ const PatientForm = ({ initialData, isEdit = false }: PatientFormProps) => {
                                 id="address"
                                 {...register("address")}
                                 rows={3}
-                                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+                                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder:text-gray-400 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
                                 placeholder="123 Main St, City, Country"
                             />
                             {errors.address ? (
@@ -219,7 +240,7 @@ const PatientForm = ({ initialData, isEdit = false }: PatientFormProps) => {
                                         return true;
                                     }
                                 })}
-                                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+                                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder:text-gray-400 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
                                 placeholder="+62 812 3456 7890"
                             />
                             {errors.phone ? (
@@ -228,27 +249,6 @@ const PatientForm = ({ initialData, isEdit = false }: PatientFormProps) => {
                         </div>
                     </div>
 
-                    <div className="sm:col-span-6">
-                        <label className="block text-sm font-medium text-gray-700">Profile Photo</label>
-                        <div className="mt-1 flex items-center">
-                            <span className="inline-block h-12 w-12 rounded-full overflow-hidden bg-gray-100">
-                                {photoUrl ? (
-                                    <img src={photoUrl} alt="patient_pp" className="h-full w-full object-cover" />
-                                ) : (
-                                    <svg className="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
-                                    </svg>
-                                )}
-                            </span>
-                            <label className={`inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 ${isUploading ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}>
-                                <input type="file" accept="image/jpeg, image/png, image/webp" className="hidden" onChange={handlePhotoChange} disabled={isUploading} />
-                                {isUploading ? "Uploading..." : "Upload"}
-                            </label>
-                        </div>
-                        {uploadError ? (
-                            <p className="mt-2 text-sm text-red-600">{uploadError}</p>
-                        ) : null}
-                    </div>
                 </div>
 
                 <div className="px-4 py-3 bg-gray-50 text-right sm:px-6 flex justify-end space-x-3">
