@@ -16,6 +16,7 @@ export default function PatientsPage() {
         address: string | null;
         photo_url: string | null;
         deleted_at: string | null;
+        latest_reg_date: string | null;
     }
 
     const [patients, setPatients] = useState<Patient[]>([]);
@@ -46,7 +47,7 @@ export default function PatientsPage() {
             try {
                 const params = buildSearchParams(searchQuery);
                 if (showDeleted) {
-                    params.set("includeDeleted", "true");
+                    params.set("deletedOnly", "true");
                 }
                 const url = params.toString() ? `/api/patients?${params}` : "/api/patients";
                 const response = await fetch(url, {signal: controller.signal});
@@ -108,7 +109,16 @@ export default function PatientsPage() {
         }
     };
 
-        // format DD-MM-YYYY HH:MM
+    // format DD-MM-YYYY HH:MM
+    const formatRegTime = (value: string | null) => {
+        if (!value) return "-";
+        const date = new Date(value);
+        const pad2 = (n: number) => String(n).padStart(2, "0");
+        if (Number.isNaN(date.getTime())) return value;
+        return `${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}-${date.getFullYear()}`;
+    }
+
+    // format DD-MM-YYYY
     const formatDoB = (value: string) => {
         const date = new Date(value);
         const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -125,10 +135,10 @@ export default function PatientsPage() {
                         <SearchBar onSearch={handleSearch} placeholder="Search Name, RM, DOB, Reg No..." />
                         <label className="flex items-center gap-2 text-sm text-gray-700">
                             <input type="checkbox" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />
-                            Show deleted patients
+                            Show only deleted patients
                         </label>
                         <Link href="/patients/create" className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 transition-colors flex items-center">
-                            <i className="fas fa-plus mr-1"></i> Add New
+                            <i className="fas fa-plus mr-1"></i> Add Patient
                         </Link>
                     </div>
                 </div>
@@ -141,7 +151,7 @@ export default function PatientsPage() {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DOB</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reg. Date</th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
@@ -157,11 +167,11 @@ export default function PatientsPage() {
                             ) : patients.length > 0 ? (
                                 patients.map((patient) => (
                                     <tr key={patient.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{patient.medical_record_no}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{patient.full_name}</td>                                                                                    
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDoB(patient.date_of_birth)}</td>                                                                                
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.gender ?? "-"}</td>                                                                                
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.address ?? "-"}</td>                                                                               
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{patient.medical_record_no}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.full_name}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDoB(patient.date_of_birth)}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.gender ?? "-"}</td>                                  
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatRegTime(patient.latest_reg_date)}</td>                                  
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"> 
                                             {patient.deleted_at ? (
                                                 <button type="button" className="text-green-600 hover:text-green-900" onClick={() => handleSoftDelete(patient.id, false)}>

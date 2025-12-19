@@ -107,9 +107,14 @@ export async function GET(req: Request) {
         // loading list of regs
         const limitParam = Number(searchParams.get("limit") ?? "100");
         const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 200) : 100;
+        const deletedOnly = searchParams.get("deletedOnly") === "true";
         const includeDeleted = searchParams.get("includeDeleted") === "true";
 
-        const conditions: string[] = includeDeleted ? ["p.deleted_at IS NULL"] : ["r.deleted_at IS NULL", "p.deleted_at IS NULL"];
+        const conditions: string[] = includeDeleted
+            ? ["p.deleted_at IS NULL"]
+            : deletedOnly
+                ? ["r.deleted_at IS NOT NULL", "p.deleted_at IS NULL"]
+                : ["r.deleted_at IS NULL", "p.deleted_at IS NULL"];
         const params: any[] = [];
         let index = 1;
 

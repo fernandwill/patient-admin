@@ -57,7 +57,7 @@ export default function RegistrationsPage() {
             try {
                 const params = buildSearchParams(searchQuery);
                 if (showDeleted) {
-                    params.set("includeDeleted", "true");
+                    params.set("deletedOnly", "true");
                 }
                 const url = params.toString() ? `/api/registrations?${params}` : "/api/registrations";
                 const response = await fetch(url, {signal: controller.signal});
@@ -118,14 +118,14 @@ export default function RegistrationsPage() {
     };
 
     // format DD-MM-YYYY HH:MM
-    const formatDateTime = (value: string) => {
+    const formatRegTime = (value: string) => {
         const date = new Date(value);
         const pad2 = (n: number) => String(n).padStart(2, "0");
         if (Number.isNaN(date.getTime())) return value;
         return `${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}-${date.getFullYear()} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
     }
 
-    const formatDob = (value: string | null) => {
+    const formatDoB = (value: string | null) => {
         if (!value) return "-";
         const date = new Date(value);
         const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -142,10 +142,10 @@ export default function RegistrationsPage() {
                         <SearchBar onSearch={handleSearch} placeholder="Search Reg No, Name, RM..." />
                         <label className="flex items-center gap-2 text-sm text-gray-700">
                             <input type="checkbox" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />
-                            Show deleted registrations
+                            Show only deleted registrations
                         </label>
                         <Link href="/registrations/create" className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 transition-colors flex items-center">
-                            <i className="fas fa-plus mr-1"></i> New Registration
+                            <i className="fas fa-plus mr-1"></i> Register
                         </Link>
                     </div>
                 </div>
@@ -175,9 +175,9 @@ export default function RegistrationsPage() {
                                 registrations.map((reg) => (
                                     <tr key={reg.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{reg.registration_no}</td>                                                                          
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateTime(reg.registration_date)}</td>                                                                                    
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatRegTime(reg.registration_date)}</td>                                                                                    
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.full_name}</td>                                                                                            
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDob(reg.date_of_birth)}</td>                                                                                    
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDoB(reg.date_of_birth)}</td>                                                                                    
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.medical_record_no}</td>                                                                                         
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"> 
                                             {reg.deleted_at ? (
