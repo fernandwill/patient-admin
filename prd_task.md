@@ -93,6 +93,10 @@ Note: Include deletedAt field for Soft Delete logic.
 
 [ ] PDF: Implement jspdf and jspdf-autotable.
 
+[ ] Excel & PDF export: allow export by filtering based on date (start date to end date) and time.
+
+[ ] Export patient registration list with patient details.
+
 [ ] Design the "Kop Surat" (Letterhead) component.
 
 [ ] Map table data to PDF renderer.

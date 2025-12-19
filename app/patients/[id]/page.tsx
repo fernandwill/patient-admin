@@ -1,6 +1,6 @@
 "use client";
-import {useEffect, useState} from "react";
-import {useParams} from "next/navigation";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import ContentWrapper from '@/components/layout/ContentWrapper';
 import PatientForm from '@/components/patients/PatientForm';
 
@@ -16,7 +16,7 @@ type PatientFormData = {
 }
 
 export default function EditPatientPage() {
-    const params = useParams<{id: string}>();
+    const params = useParams<{ id: string }>();
     const idParam = params?.id;
     const id = Array.isArray(idParam) ? idParam[0] : idParam;
     const [patient, setPatient] = useState<PatientFormData | null>(null);
@@ -54,7 +54,7 @@ export default function EditPatientPage() {
                     id: first.id,
                     medicalRecordNo: first.medical_record_no ?? "",
                     name: first.full_name ?? "",
-                    dob: first.date_of_birth ?? "",
+                    dob: (first.date_of_birth ?? "").split("T")[0], // Extract YYYY-MM-DD from ISO timestamp
                     gender: first.gender ?? "",
                     address: first.address ?? "",
                     phone: first.phone ?? "",
@@ -63,7 +63,7 @@ export default function EditPatientPage() {
 
                 setPatient(mappedPatient);
             } catch (err) {
-                const name = (err as {name?: string}).name;
+                const name = (err as { name?: string }).name;
                 if (name === "AbortError") return;
                 setError(err instanceof Error ? err.message : "Unknown error.");
             } finally {

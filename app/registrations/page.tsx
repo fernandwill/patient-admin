@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import ContentWrapper from "@/components/layout/ContentWrapper";
 import Link from "next/link";
 import SearchBar from "@/components/ui/SearchBar";
+import RegistrationDetailModal from "@/components/registrations/RegistrationDetailModal";
 
 export default function RegistrationsPage() {
     type Registration = {
@@ -22,6 +23,7 @@ export default function RegistrationsPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showDeleted, setShowDeleted] = useState(false);
+    const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
 
     const buildSearchParams = (raw: string) => {
         const trimmed = raw.trim();
@@ -31,19 +33,8 @@ export default function RegistrationsPage() {
             return params;
         }
 
-        const isDigits = /^\d+$/.test(trimmed);
-
-        if (isDigits) {
-            if (trimmed.length === 12) {
-                params.set("reg", trimmed);
-            } else {
-                if (trimmed.length === 9) {
-                    params.set("rm", trimmed);
-                }
-            }
-            return params;
-        }
-        params.set("name", trimmed);
+        // Use queue parameter for unified search across name, rm, reg no, and dob
+        params.set("queue", trimmed);
         return params;
     }
 
@@ -158,93 +149,101 @@ export default function RegistrationsPage() {
     }
 
     return (
-        <ContentWrapper title="Registrations">
-            <div className="bg-white rounded shadow">
-                <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-                    <div className="flex items-center space-x-4">
-                        <SearchBar onSearch={handleSearch} placeholder="Search..." />
-                        <label className="flex items-center gap-2 text-sm text-gray-700">
-                            <input type="checkbox" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />
-                            Show only deleted registrations
-                        </label>
+        <>
+            <ContentWrapper title="Registrations">
+                <div className="bg-white rounded shadow">
+                    <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                        <div className="flex items-center space-x-4">
+                            <SearchBar onSearch={handleSearch} placeholder="Search..." />
+                            <label className="flex items-center gap-2 text-sm text-gray-700">
+                                <input type="checkbox" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />
+                                Show only deleted registrations
+                            </label>
+                        </div>
+                        <Link href="/registrations/create" className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 transition-colors flex items-center">
+                            <i className="fas fa-plus mr-1"></i> Register
+                        </Link>
                     </div>
-                    <Link href="/registrations/create" className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 transition-colors flex items-center">
-                        <i className="fas fa-plus mr-1"></i> Register
-                    </Link>
-                </div>
 
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reg No</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reg Date</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient Name</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DOB</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No RM</th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {isLoading ? (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">Loading registrations...</td>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reg No</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reg Date</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient Name</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DOB</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No RM</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
-                            ) : error ? (
-                                <tr>
-                                    <td colSpan={6} className="px-6 py-4 text-center text-sm text-red-600">{error}</td>
-                                </tr>
-                            ) : registrations.length > 0 ? (
-                                registrations.map((reg) => (
-                                    <tr key={reg.id} className="group hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{reg.registration_no}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatRegTime(reg.registration_date)}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.full_name}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDoB(reg.date_of_birth)}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.medical_record_no}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                                            {reg.deleted_at ? (
-                                                <>
-                                                    <button type="button" className="text-green-600 hover:text-green-900 mr-3" onClick={() => handleSoftDelete(reg.id, false)}>
-                                                        <i className="fas fa-undo"></i>
-                                                    </button>
-                                                    <button type="button" className="text-red-600 hover:text-red-900" onClick={() => handleHardDelete(reg.id)}>
-                                                        <i className="fas fa-trash"></i>
-                                                    </button>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Link href={`/registrations/${reg.id}`} className="text-blue-600 hover:text-blue-900 mr-3">
-                                                        <i className="fas fa-edit"></i>
-                                                    </Link>
-                                                    <button type="button" className="text-red-600 hover:text-red-900" onClick={() => handleSoftDelete(reg.id, true)}>
-                                                        <i className="fas fa-trash"></i>
-                                                    </button>
-                                                </>
-                                            )}
-                                        </td>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {isLoading ? (
+                                    <tr>
+                                        <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">Loading registrations...</td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">No registrations found.</td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                                ) : error ? (
+                                    <tr>
+                                        <td colSpan={6} className="px-6 py-4 text-center text-sm text-red-600">{error}</td>
+                                    </tr>
+                                ) : registrations.length > 0 ? (
+                                    registrations.map((reg) => (
+                                        <tr key={reg.id} className="group hover:bg-gray-50 cursor-pointer" onClick={() => setSelectedRegistration(reg)}>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{reg.registration_no}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatRegTime(reg.registration_date)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.full_name}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDoB(reg.date_of_birth)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.medical_record_no}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                                                {reg.deleted_at ? (
+                                                    <>
+                                                        <button type="button" className="text-green-600 hover:text-green-900 mr-3" onClick={() => handleSoftDelete(reg.id, false)}>
+                                                            <i className="fas fa-undo"></i>
+                                                        </button>
+                                                        <button type="button" className="text-red-600 hover:text-red-900" onClick={() => handleHardDelete(reg.id)}>
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Link href={`/registrations/${reg.id}`} className="text-blue-600 hover:text-blue-900 mr-3">
+                                                            <i className="fas fa-edit"></i>
+                                                        </Link>
+                                                        <button type="button" className="text-red-600 hover:text-red-900" onClick={() => handleSoftDelete(reg.id, true)}>
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">No registrations found.</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
 
-                <div className="p-4 border-t border-gray-200 flex justify-between items-center">
-                    <div className="text-sm text-gray-500">
-                        Showing {registrations.length} entries
-                    </div>
-                    <div className="flex space-x-1">
-                        <button className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50">Previous</button>
-                        <button className="px-3 py-1 bg-blue-600 text-white border border-blue-600 rounded text-sm">1</button>
-                        <button className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50">Next</button>
+                    <div className="p-4 border-t border-gray-200 flex justify-between items-center">
+                        <div className="text-sm text-gray-500">
+                            Showing {registrations.length} entries
+                        </div>
+                        <div className="flex space-x-1">
+                            <button className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50">Previous</button>
+                            <button className="px-3 py-1 bg-blue-600 text-white border border-blue-600 rounded text-sm">1</button>
+                            <button className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50">Next</button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </ContentWrapper>
+            </ContentWrapper>
+
+            <RegistrationDetailModal
+                registration={selectedRegistration}
+                isOpen={selectedRegistration !== null}
+                onClose={() => setSelectedRegistration(null)}
+            />
+        </>
     );
 }

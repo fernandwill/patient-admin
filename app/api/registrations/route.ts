@@ -1,21 +1,21 @@
-﻿import {NextResponse} from "next/server";
-import {getClient, query} from "@/lib/db";
-import {generateSequenceWithClient} from "@/lib/sequence";
+﻿import { NextResponse } from "next/server";
+import { getClient, query } from "@/lib/db";
+import { generateSequenceWithClient } from "@/lib/sequence";
 
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const {patientId, registrationDate, notes, registrationNo, patient} = body || {};
+        const { patientId, registrationDate, notes, registrationNo, patient } = body || {};
 
         if ((!patientId && !patient) || !registrationDate) {
             return NextResponse.json(
-                {error: "patientId (or patient) and registrationDate are required."},
-                {status: 400}
+                { error: "patientId (or patient) and registrationDate are required." },
+                { status: 400 }
             );
         }
 
         if (registrationNo) {
-            return NextResponse.json({error: "registrationNo is system-generated and cannot be provided."}, {status: 400});
+            return NextResponse.json({ error: "registrationNo is system-generated and cannot be provided." }, { status: 400 });
         }
 
         const client = await getClient();
@@ -25,16 +25,16 @@ export async function POST(req: Request) {
             let finalPatientId = Number(patientId);
 
             if (patient) {
-                const {fullName, dateOfBirth, gender, phone, address, photoUrl} = patient || {};
+                const { fullName, dateOfBirth, gender, phone, address, photoUrl } = patient || {};
                 if (!fullName || !dateOfBirth) {
                     await client.query("ROLLBACK");
-                    return NextResponse.json({error: "patient.fullName and patient.dateOfBirth are required."}, {status: 400});
+                    return NextResponse.json({ error: "patient.fullName and patient.dateOfBirth are required." }, { status: 400 });
                 }
 
                 const patientGender = typeof gender === "string" ? gender.trim() : null;
                 if (patientGender && patientGender !== "Male" && patientGender !== "Female") {
                     await client.query("ROLLBACK");
-                    return NextResponse.json({error: "Gender must be male or female."}, {status: 400});
+                    return NextResponse.json({ error: "Gender must be male or female." }, { status: 400 });
                 }
 
                 const medicalRecordNo = await generateSequenceWithClient(client, "RM");
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
 
             if (!finalPatientId || Number.isNaN(finalPatientId)) {
                 await client.query("ROLLBACK");
-                return NextResponse.json({error: "patientId is required."}, {status: 400});
+                return NextResponse.json({ error: "patientId is required." }, { status: 400 });
             }
 
             const checkPatientExist = await client.query(
@@ -62,12 +62,12 @@ export async function POST(req: Request) {
             );
             if (checkPatientExist.rowCount === 0) {
                 await client.query("ROLLBACK");
-                return NextResponse.json({error: "Patient not found."}, {status: 404});
+                return NextResponse.json({ error: "Patient not found." }, { status: 404 });
             }
 
             const nextRegistrationNo = await generateSequenceWithClient(client, "REG");
             const insert = `INSERT INTO registrations (registration_no, patient_id, registration_date, notes) VALUES ($1, $2, $3, $4) RETURNING *;`;
-            const {rows} = await client.query(insert, [
+            const { rows } = await client.query(insert, [
                 nextRegistrationNo,
                 finalPatientId,
                 registrationDate,
@@ -75,12 +75,12 @@ export async function POST(req: Request) {
             ]);
 
             await client.query("COMMIT");
-            return NextResponse.json(rows[0], {status: 201});
+            return NextResponse.json(rows[0], { status: 201 });
         } catch (err) {
             await client.query("ROLLBACK");
-            const errCode = err as {code?: string};
+            const errCode = err as { code?: string };
             if (errCode?.code === "23505") {
-                return NextResponse.json({error: "Registration number already exists."}, {status: 409});
+                return NextResponse.json({ error: "Registration number already exists." }, { status: 409 });
             }
             throw err;
         } finally {
@@ -88,17 +88,19 @@ export async function POST(req: Request) {
         }
     } catch (err) {
         console.error(err);
-        return NextResponse.json({error: "Internal server error."}, {status: 500})
+        return NextResponse.json({ error: "Internal server error." }, { status: 500 })
     }
 }
 
 
 export async function GET(req: Request) {
     try {
-        const {searchParams} = new URL(req.url);
+        const { searchParams } = new URL(req.url);
+        const queue = searchParams.get("queue");
         const reg = searchParams.get("reg");
         const rm = searchParams.get("rm");
         const name = searchParams.get("name");
+        const dob = searchParams.get("dob");
         const start = searchParams.get("start");
         const end = searchParams.get("end");
         // loading single reg by id
@@ -119,7 +121,7 @@ export async function GET(req: Request) {
         let index = 1;
 
         if (idParam && (!Number.isFinite(id) || id === 0)) {
-            return NextResponse.json({error: "Invalid id parameter."}, {status: 400});
+            return NextResponse.json({ error: "Invalid id parameter." }, { status: 400 });
         }
 
         if (id) {
@@ -128,34 +130,66 @@ export async function GET(req: Request) {
             index++;
         }
 
-        if (reg) {
-            conditions.push(`r.registration_no ILIKE $${index}`);
-            params.push(`%${reg}%`);
-            index ++;
-        }
+        // Unified search: queue searches across name, rm, reg, and dob
+        const queueTrimmed = typeof queue === "string" ? queue.trim() : "";
+        if (queueTrimmed) {
+            const orParts: string[] = [];
 
-        if (rm) {
-            conditions.push(`p.medical_record_no ILIKE $${index}`);
-            params.push(`%${rm}%`);
-            index ++;
-        }
+            const likeIndex = index;
+            params.push(`%${queueTrimmed}%`);
+            index++;
 
-        if (name) {
-            conditions.push(`p.full_name ILIKE $${index}`);
-            params.push(`%${name}%`);
-            index ++;
+            orParts.push(`p.full_name ILIKE $${likeIndex}`);
+            orParts.push(`p.medical_record_no ILIKE $${likeIndex}`);
+            orParts.push(`r.registration_no ILIKE $${likeIndex}`);
+
+            // If the query looks like a date (YYYY-MM-DD), also search by DOB
+            if (/^\d{4}-\d{2}-\d{2}$/.test(queueTrimmed)) {
+                const dobIndex = index;
+                params.push(queueTrimmed);
+                index++;
+
+                orParts.push(`p.date_of_birth = $${dobIndex}`);
+            }
+
+            conditions.push(`(${orParts.join(" OR ")})`);
+        } else {
+            // Individual parameter search (legacy support)
+            if (reg) {
+                conditions.push(`r.registration_no ILIKE $${index}`);
+                params.push(`%${reg}%`);
+                index++;
+            }
+
+            if (rm) {
+                conditions.push(`p.medical_record_no ILIKE $${index}`);
+                params.push(`%${rm}%`);
+                index++;
+            }
+
+            if (name) {
+                conditions.push(`p.full_name ILIKE $${index}`);
+                params.push(`%${name}%`);
+                index++;
+            }
+
+            if (dob) {
+                conditions.push(`p.date_of_birth = $${index}`);
+                params.push(dob);
+                index++;
+            }
         }
 
         if (start) {
             conditions.push(`r.registration_date >= $${index}`);
             params.push(start);
-            index ++;
+            index++;
         }
 
         if (end) {
             conditions.push(`r.registration_date <= $${index}`);
             params.push(end);
-            index ++;
+            index++;
         }
 
         const whereClause = conditions.join(" AND ");
@@ -164,33 +198,33 @@ export async function GET(req: Request) {
         `;
         params.push(limit);
 
-        const {rows} = await query(list, params);
-        return NextResponse.json(rows, {status: 200});
+        const { rows } = await query(list, params);
+        return NextResponse.json(rows, { status: 200 });
     } catch (err) {
         console.error(err);
-        return NextResponse.json({error: "Internal server error."}, {status: 500});
+        return NextResponse.json({ error: "Internal server error." }, { status: 500 });
     }
 }
 
 export async function PATCH(req: Request) {
     try {
         const body = await req.json();
-        const {id, deleted} = body || {};
+        const { id, deleted } = body || {};
         const registrationId = Number(id);
 
         if (!registrationId || Number.isNaN(registrationId)) {
-            return NextResponse.json({error: "id is required"}, {status: 400});
+            return NextResponse.json({ error: "id is required" }, { status: 400 });
         }
 
         const existingRegistration = await query("SELECT id, patient_id FROM registrations WHERE id = $1", [registrationId]);
         if (existingRegistration.rowCount === 0) {
-            return NextResponse.json({error: "Registration not found"}, {status: 404});
+            return NextResponse.json({ error: "Registration not found" }, { status: 404 });
         }
 
         const patientId = existingRegistration.rows[0].patient_id;
         const patient = await query("SELECT id FROM patients WHERE id = $1 AND deleted_at IS NULL", [patientId]);
         if (patient.rowCount === 0) {
-            return NextResponse.json({error: "Patient not found or deleted"}, {status: 404});
+            return NextResponse.json({ error: "Patient not found or deleted" }, { status: 404 });
         }
 
         const deletedAt = deleted === true ? new Date().toISOString() : null;
@@ -201,30 +235,30 @@ export async function PATCH(req: Request) {
             RETURNING *;
         `;
 
-        const {rows} = await query(update, [deletedAt, registrationId]);
-        return NextResponse.json(rows[0], {status: 200});
+        const { rows } = await query(update, [deletedAt, registrationId]);
+        return NextResponse.json(rows[0], { status: 200 });
     } catch (err) {
         console.error(err);
-        return NextResponse.json({error: "Internal server error."}, {status: 500});
+        return NextResponse.json({ error: "Internal server error." }, { status: 500 });
     }
 }
 
 export async function PUT(req: Request) {
     try {
         const body = await req.json();
-        const {id, patientId, registrationDate, notes} = body || {};
+        const { id, patientId, registrationDate, notes } = body || {};
         const registrationId = Number(id);
-        
+
         if (!registrationId || Number.isNaN(registrationId)) {
-            return NextResponse.json({error: "id is required."}, {status: 400});
+            return NextResponse.json({ error: "id is required." }, { status: 400 });
         }
 
         const existingRegistration = await query("SELECT id, patient_id, deleted_at FROM registrations WHERE id = $1", [registrationId]);
         if (existingRegistration.rowCount === 0) {
-            return NextResponse.json({error: "Registration not found."}, {status: 404});
+            return NextResponse.json({ error: "Registration not found." }, { status: 404 });
         }
         if (existingRegistration.rows[0].deleted_at) {
-            return NextResponse.json({error: "Registration is already deleted."}, {status: 400});
+            return NextResponse.json({ error: "Registration is already deleted." }, { status: 400 });
         }
 
         const fields: string[] = [];
@@ -234,58 +268,58 @@ export async function PUT(req: Request) {
         if (patientId) {
             const patient = await query("SELECT id FROM patients WHERE id = $1 AND deleted_at IS NULL", [patientId]);
             if (patient.rowCount === 0) {
-                return NextResponse.json({error: "Patient not found."}, {status: 404});
+                return NextResponse.json({ error: "Patient not found." }, { status: 404 });
             }
             fields.push(`patient_id = $${index}`);
             params.push(patientId);
-            index ++;
+            index++;
         }
 
         if (registrationDate) {
             fields.push(`registration_date = $${index}`);
             params.push(registrationDate);
-            index ++;
+            index++;
         }
 
         if (notes !== undefined) {
             fields.push(`notes = $${index}`);
             params.push(notes ?? null);
-            index ++;
+            index++;
         }
 
         if (fields.length === 0) {
-            return NextResponse.json({error: "No fields to update."}, {status: 400});
+            return NextResponse.json({ error: "No fields to update." }, { status: 400 });
         }
 
         fields.push("updated_at = NOW()");
         const sql = `UPDATE registrations SET ${fields.join(", ")} WHERE id = $${index} RETURNING *;`;
         params.push(registrationId);
 
-        const {rows} = await query(sql, params);
-        return NextResponse.json(rows[0], {status: 200});
+        const { rows } = await query(sql, params);
+        return NextResponse.json(rows[0], { status: 200 });
     } catch (err) {
         console.error(err);
-        return NextResponse.json({error: "Internal server error."}, {status: 500});
+        return NextResponse.json({ error: "Internal server error." }, { status: 500 });
     }
 }
 
 export async function DELETE(req: Request) {
     try {
-        const {searchParams} =  new URL(req.url);
+        const { searchParams } = new URL(req.url);
         const id = Number(searchParams.get("id"));
         if (!id || Number.isNaN(id)) {
-            return NextResponse.json({error: "id is required."}, {status: 400});
+            return NextResponse.json({ error: "id is required." }, { status: 400 });
         }
 
         const existingRegistration = await query("SELECT id FROM registrations WHERE id = $1", [id]);
         if (existingRegistration.rowCount === 0) {
-            return NextResponse.json({error: "Registration not found."}, {status: 404});
+            return NextResponse.json({ error: "Registration not found." }, { status: 404 });
         }
 
-        const {rows} = await query("DELETE FROM registrations WHERE id = $1 RETURNING *;", [id]);
-        return NextResponse.json(rows[0], {status: 200});
+        const { rows } = await query("DELETE FROM registrations WHERE id = $1 RETURNING *;", [id]);
+        return NextResponse.json(rows[0], { status: 200 });
     } catch (err) {
         console.error(err);
-        return NextResponse.json({error: "Internal server error."}, {status: 500});
+        return NextResponse.json({ error: "Internal server error." }, { status: 500 });
     }
 }
