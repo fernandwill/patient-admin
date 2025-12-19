@@ -24,7 +24,6 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
 
     const response = await fetch(url, mergedOptions);
 
-    // If we get a 401, it means our API Key is wrong or missing
     if (response.status === 401) {
         console.error("API Authorization failed. Check your NEXT_PUBLIC_API_KEY.");
     }
