@@ -21,7 +21,7 @@ Demo aplikasi dapat diakses di: https://patient-admin-demo-681080561228.asia-sou
 
 1. **Manajemen Pasien**:
    - CRUD lengkap dengan fitur *Soft Delete*. Untuk *Hard Delete* bisa dilakukan melalui page "Show deleted registration/patient" lalu melakukan delete dan konfirmasi dua kali.
-   - Upload foto profil pasien menggunakan layanan Cloudinary.
+   - Upload foto profil pasien menggunakan layanan Cloudinary. Upload foto bisa dilakukan dari halaman "Edit" pasien.
    - Auto-generate Nomor Rekam Medis (No RM) unik.
    - Klik row di list pasien untuk membuka detail pasien.
    - Pasien yang sudah di "soft delete" bisa di-restore dengan button "Restore".
