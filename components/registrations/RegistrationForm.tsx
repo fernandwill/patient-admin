@@ -286,6 +286,7 @@ const RegistrationForm = ({ initialData, isEdit = false }: RegistrationFormProps
                                         type="date"
                                         {...register("patientDob", { required: "Date of birth is required." })}
                                         className="mt-1 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-foreground bg-background placeholder:text-slate-500 block w-full sm:text-sm border-border rounded-md p-2 border transition-colors"
+                                        onClick={(e) => e.currentTarget.showPicker()}
                                     />
                                     {errors.patientDob ? (
                                         <p className="mt-1 text-xs text-red-600">{errors.patientDob.message}</p>
@@ -316,6 +317,7 @@ const RegistrationForm = ({ initialData, isEdit = false }: RegistrationFormProps
                                             id="registrationDate"
                                             {...register("registrationDate", { required: "Registration date is required." })}
                                             className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-foreground bg-background placeholder:text-slate-500 block w-full sm:text-sm border-border rounded-md p-2 border transition-colors"
+                                            onClick={(e) => e.currentTarget.showPicker()}
                                         />
                                     </div>
                                     {errors.registrationDate ? (

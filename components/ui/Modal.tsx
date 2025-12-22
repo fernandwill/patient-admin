@@ -54,7 +54,7 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
                     <button
                         type="button"
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                        className="text-slate-500 hover:text-foreground transition-colors"
                     >
                         <i className="fas fa-times"></i>
                     </button>

@@ -131,7 +131,7 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
             <div className="bg-card rounded shadow-sm border border-border transition-colors duration-300">
                 <div className="p-6 border-b border-border bg-navbar rounded-t transition-colors duration-300">
                     <h3 className="text-lg font-medium text-foreground">Edit Patient</h3>
-                    <p className="mt-1 text-sm text-gray-500">Edit patient information.</p>
+                    <p className="mt-1 text-sm text-slate-400">Edit patient information.</p>
                     {errorMessage ? (
                         <div className="mt-4 p-3 bg-red-50 border-l-4 border-red-400 text-red-700 flex items-center gap-3 animate-in fade-in slide-in-from-top-1">
                             <i className="fas fa-exclamation-triangle"></i>
@@ -177,7 +177,7 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
                                     type="text"
                                     value={(initialData?.medicalRecordNo ?? "").toString()}
                                     disabled
-                                    className="mt-1 block w-full rounded-md border border-border bg-background p-2 text-sm text-gray-400"
+                                    className="mt-1 block w-full rounded-md border border-border bg-slate-900/50 p-2 text-sm text-slate-400"
                                 />
                             </div>
 
@@ -188,7 +188,7 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
                                         type="text"
                                         id="name"
                                         {...register("name", { required: "Full name is required." })}
-                                        className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder:text-gray-400 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+                                        className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-foreground bg-background placeholder:text-slate-500 block w-full sm:text-sm border-border rounded-md p-2 border transition-colors"
                                         placeholder="John Doe"
                                     />
                                     {errors.name ? (
@@ -204,7 +204,8 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
                                         type="date"
                                         id="dob"
                                         {...register("dob", { required: "Date of birth is required." })}
-                                        className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder:text-gray-400 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+                                        className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-foreground bg-background placeholder:text-slate-500 block w-full sm:text-sm border-border rounded-md p-2 border transition-colors"
+                                        onClick={(e) => e.currentTarget.showPicker()}
                                     />
                                     {errors.dob ? (
                                         <p className="mt-1 text-xs text-red-600">{errors.dob.message}</p>
@@ -218,7 +219,7 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
                                     <select
                                         id="gender"
                                         {...register("gender")}
-                                        className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder:text-gray-400 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+                                        className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-foreground bg-background placeholder:text-slate-500 block w-full sm:text-sm border-border rounded-md p-2 border transition-colors"
                                     >
                                         <option value="">Select Gender</option>
                                         <option value="Male">Male</option>
@@ -237,7 +238,7 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
                                         id="address"
                                         {...register("address")}
                                         rows={3}
-                                        className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder:text-gray-400 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+                                        className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-foreground bg-background placeholder:text-slate-500 block w-full sm:text-sm border-border rounded-md p-2 border transition-colors"
                                         placeholder="Address..."
                                     />
                                     {errors.address ? (
@@ -265,7 +266,7 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
                                                 return true;
                                             }
                                         })}
-                                        className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-foreground bg-background placeholder:text-gray-400 block w-full sm:text-sm border-border rounded-md p-2 border transition-colors duration-300"
+                                        className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-foreground bg-background placeholder:text-slate-500 block w-full sm:text-sm border-border rounded-md p-2 border transition-colors"
                                         placeholder="+62 812 3456 7890"
                                     />
                                     {errors.phone ? (

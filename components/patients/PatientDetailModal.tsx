@@ -34,48 +34,48 @@ const PatientDetailModal = ({ patient, isOpen, onClose }: PatientDetailModalProp
                         <img
                             src={patient.photo_url}
                             alt={patient.full_name}
-                            className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
+                            className="w-24 h-24 rounded-full object-cover border-2 border-border"
                         />
                     ) : (
-                        <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center">
-                            <i className="fas fa-user text-3xl text-gray-400"></i>
+                        <div className="w-24 h-24 rounded-full bg-slate-800 flex items-center justify-center border-2 border-border">
+                            <i className="fas fa-user text-3xl text-slate-500"></i>
                         </div>
                     )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-xs font-medium text-gray-500 uppercase">Medical Record No</label>
-                        <p className="mt-1 text-sm text-gray-900">{patient.medical_record_no}</p>
+                        <label className="block text-xs font-medium text-slate-500 uppercase">Medical Record No</label>
+                        <p className="mt-1 text-sm text-foreground font-medium">{patient.medical_record_no}</p>
                     </div>
                     <div>
-                        <label className="block text-xs font-medium text-gray-500 uppercase">Full Name</label>
-                        <p className="mt-1 text-sm text-gray-900">{patient.full_name}</p>
+                        <label className="block text-xs font-medium text-slate-500 uppercase">Full Name</label>
+                        <p className="mt-1 text-sm text-foreground font-medium">{patient.full_name}</p>
                     </div>
                     <div>
-                        <label className="block text-xs font-medium text-gray-500 uppercase">Date of Birth</label>
-                        <p className="mt-1 text-sm text-gray-900">{formatDoB(patient.date_of_birth)}</p>
+                        <label className="block text-xs font-medium text-slate-500 uppercase">Date of Birth</label>
+                        <p className="mt-1 text-sm text-foreground">{formatDoB(patient.date_of_birth)}</p>
                     </div>
                     <div>
-                        <label className="block text-xs font-medium text-gray-500 uppercase">Gender</label>
-                        <p className="mt-1 text-sm text-gray-900">{patient.gender ?? "-"}</p>
+                        <label className="block text-xs font-medium text-slate-500 uppercase">Gender</label>
+                        <p className="mt-1 text-sm text-foreground">{patient.gender ?? "-"}</p>
                     </div>
                     <div>
-                        <label className="block text-xs font-medium text-gray-500 uppercase">Phone</label>
-                        <p className="mt-1 text-sm text-gray-900">{patient.phone ?? "-"}</p>
+                        <label className="block text-xs font-medium text-slate-500 uppercase">Phone</label>
+                        <p className="mt-1 text-sm text-foreground">{patient.phone ?? "-"}</p>
                     </div>
                     <div>
-                        <label className="block text-xs font-medium text-gray-500 uppercase">Latest Registration</label>
-                        <p className="mt-1 text-sm text-gray-900">{formatDoB(patient.latest_reg_date)}</p>
+                        <label className="block text-xs font-medium text-slate-500 uppercase">Latest Registration</label>
+                        <p className="mt-1 text-sm text-foreground">{formatDoB(patient.latest_reg_date)}</p>
                     </div>
                 </div>
                 <div>
-                    <label className="block text-xs font-medium text-gray-500 uppercase">Address</label>
-                    <p className="mt-1 text-sm text-gray-900">{patient.address ?? "-"}</p>
+                    <label className="block text-xs font-medium text-slate-500 uppercase">Address</label>
+                    <p className="mt-1 text-sm text-foreground">{patient.address ?? "-"}</p>
                 </div>
                 {patient.deleted_at && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded">
-                        <p className="text-sm text-red-700">
+                    <div className="p-3 bg-red-900/20 border border-red-900/50 rounded">
+                        <p className="text-sm text-red-400">
                             <i className="fas fa-trash mr-2"></i>
                             Deleted on {formatDoB(patient.deleted_at)}
                         </p>

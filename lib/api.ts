@@ -9,15 +9,20 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
         console.warn("NEXT_PUBLIC_API_KEY is not defined in your environment variables.");
     }
 
-    const defaultHeaders = {
-        'Content-Type': 'application/json',
+    const isFormData = options.body instanceof FormData;
+
+    const headers: Record<string, string> = {
         'x-api-key': apiKey || '',
     };
+
+    if (!isFormData) {
+        headers['Content-Type'] = 'application/json';
+    }
 
     const mergedOptions = {
         ...options,
         headers: {
-            ...defaultHeaders,
+            ...headers,
             ...options.headers,
         },
     };
