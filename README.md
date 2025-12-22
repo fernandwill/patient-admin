@@ -29,7 +29,6 @@ Demo aplikasi dapat diakses di: https://patient-admin-demo-681080561228.asia-sou
 2. **Registrasi Pasien**:
    - Pencatatan kunjungan pasien secara *real-time*.
    - Auto-generate Nomor Registrasi yang reset setiap hari.
-   - Relasi data yang kuat antara registrasi dan data master pasien.
    - Klik row di list registrasi untuk membuka detail registrasi pasien.
    - Registrasi yang sudah di "soft delete" bisa di-restore dengan button "Restore".
 
