@@ -42,19 +42,19 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
             onClick={handleBackdropClick}
         >
             <div
                 ref={dialogRef}
-                className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-hidden"
+                className="bg-card rounded-lg shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-hidden border border-border transition-colors duration-300"
             >
-                <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+                <div className="flex items-center justify-between p-4 border-b border-border">
+                    <h3 className="text-lg font-semibold text-foreground">{title}</h3>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                     >
                         <i className="fas fa-times"></i>
                     </button>

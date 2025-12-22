@@ -1,9 +1,20 @@
+"use client";
+
+import { useSidebar } from "@/context/SidebarContext";
+
 const Navbar = () => {
+    const { toggleSidebar } = useSidebar();
+
     return (
-        <nav className="main-header navbar navbar-expand navbar-white navbar-light bg-white border-b border-gray-200 h-14 flex items-center justify-between px-4">
+        <nav className="main-header navbar navbar-expand navbar-white navbar-light bg-navbar border-b border-border h-14 flex items-center justify-between px-4 transition-colors duration-300">
             <ul className="navbar-nav flex items-center space-x-4">
                 <li className="nav-item">
-                    <button className="nav-link text-gray-500 hover:text-gray-700 focus:outline-none" data-widget="pushmenu" role="button">
+                    <button
+                        className="nav-link text-gray-500 hover:text-gray-700 focus:outline-none p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        onClick={toggleSidebar}
+                        role="button"
+                        aria-label="Toggle Sidebar"
+                    >
                         <i className="fas fa-bars"></i>
                     </button>
                 </li>

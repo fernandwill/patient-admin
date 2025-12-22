@@ -1,4 +1,4 @@
-import {Pool} from "pg";
+import { Pool } from "pg";
 
 declare global {
     var pool: Pool | undefined;
@@ -6,7 +6,7 @@ declare global {
 
 const pool = global.pool || new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: false, // false for local Docker
+    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
 });
 
 if (!global.pool) {

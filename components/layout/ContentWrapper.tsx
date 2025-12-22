@@ -7,13 +7,13 @@ interface ContentWrapperProps {
 
 const ContentWrapper = ({ children, title }: ContentWrapperProps) => {
     return (
-        <div className="content-wrapper flex-1 bg-gray-100 flex flex-col min-h-0 overflow-hidden">
+        <div className="content-wrapper flex-1 bg-background flex flex-col min-h-0 overflow-hidden transition-colors duration-300">
             {title && (
-                <div className="content-header bg-white shadow-sm py-4 px-6 mb-4">
+                <div className="content-header bg-navbar shadow-sm py-4 px-6 mb-4 border-b border-border transition-colors duration-300">
                     <div className="container-fluid">
                         <div className="row mb-2 flex justify-between items-center">
                             <div className="col-sm-6">
-                                <h1 className="m-0 text-2xl font-semibold text-gray-800">{title}</h1>
+                                <h1 className="m-0 text-2xl font-semibold text-foreground">{title}</h1>
                             </div>
                             <div className="col-sm-6">
                                 <ol className="breadcrumb float-sm-right flex space-x-2 text-sm text-gray-500">

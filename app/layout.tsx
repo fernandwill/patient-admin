@@ -4,6 +4,8 @@ import "./globals.css";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { SidebarProvider } from "@/context/SidebarContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <link
           rel="stylesheet"
@@ -34,18 +36,22 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased transition-colors duration-300`}
       >
-        <div className="wrapper flex h-screen bg-gray-100 overflow-hidden">
-          <Sidebar />
-          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-            <Navbar />
-            <main className="flex-1 overflow-y-auto p-4">
-              {children}
-            </main>
-            <Footer />
-          </div>
-        </div>
+        <ThemeProvider>
+          <SidebarProvider>
+            <div className="wrapper flex h-screen bg-background text-foreground overflow-hidden">
+              <Sidebar />
+              <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+                <Navbar />
+                <main className="flex-1 overflow-y-auto p-4 bg-background">
+                  {children}
+                </main>
+                <Footer />
+              </div>
+            </div>
+          </SidebarProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

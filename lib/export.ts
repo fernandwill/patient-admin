@@ -16,10 +16,10 @@ export const exportToPDF = (data: any[], fileName: string, title: string) => {
 
         // Kop Surat (Letterhead)
         doc.setFontSize(18);
-        doc.text("KLINIK SEHAT SEJAHTERA", 105, 15, { align: "center" });
+        doc.text("TEST HOSPITAL/CLINIC", 105, 15, { align: "center" });
         doc.setFontSize(10);
-        doc.text("Jl. Kesehatan No. 123, Jakarta Selatan", 105, 22, { align: "center" });
-        doc.text("Telp: (021) 12345678 | Email: info@kliniksehat.com", 105, 27, { align: "center" });
+        doc.text("INSTITUTION ADDRESS HERE", 105, 22, { align: "center" });
+        doc.text("INSTITUTION CONTACT HERE", 105, 27, { align: "center" });
         doc.line(20, 32, 190, 32); // Horizontal line
 
         doc.setFontSize(14);

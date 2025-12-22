@@ -139,13 +139,13 @@ export default function RegistrationsPage() {
     return (
         <>
             <ContentWrapper title="Registrations">
-                <div className="bg-white rounded shadow">
-                    <div className="p-4 border-b border-gray-200 flex flex-wrap gap-4 justify-between items-center">
+                <div className="bg-card rounded shadow border border-border transition-colors duration-300">
+                    <div className="p-4 border-b border-border flex flex-wrap gap-4 justify-between items-center bg-navbar transition-colors duration-300">
                         <div className="flex flex-wrap items-center gap-4">
                             <SearchBar onSearch={handleSearch} placeholder="Search..." />
-                            <label className="flex items-center gap-2 text-sm text-gray-700">
+                            <label className="flex items-center gap-2 text-sm text-foreground">
                                 <input type="checkbox" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />
-                                Show deleted
+                                Show only deleted registrations.
                             </label>
                         </div>
                         <div className="flex items-center gap-2">
@@ -170,8 +170,8 @@ export default function RegistrationsPage() {
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                        <table className="min-w-full divide-y divide-border">
+                            <thead className="bg-navbar transition-colors duration-300">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reg No</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reg Date</th>
@@ -181,7 +181,7 @@ export default function RegistrationsPage() {
                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-card divide-y divide-border transition-colors duration-300">
                                 {isLoading ? (
                                     <tr>
                                         <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">Loading registrations...</td>
@@ -192,8 +192,8 @@ export default function RegistrationsPage() {
                                     </tr>
                                 ) : registrations.length > 0 ? (
                                     registrations.map((reg) => (
-                                        <tr key={reg.id} className="group hover:bg-gray-50 cursor-pointer" onClick={() => setSelectedRegistration(reg)}>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{reg.registration_no}</td>
+                                        <tr key={reg.id} className="group hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors duration-200" onClick={() => setSelectedRegistration(reg)}>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{reg.registration_no}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatRegTime(reg.registration_date)}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.full_name}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDoB(reg.date_of_birth)}</td>
@@ -201,10 +201,10 @@ export default function RegistrationsPage() {
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                                                 {reg.deleted_at ? (
                                                     <>
-                                                        <button type="button" className="text-green-600 hover:text-green-900 mr-3" onClick={() => handleSoftDelete(reg.id, false)}>
+                                                        <button type="button" className="text-green-600 hover:text-green-900 mr-3 cursor-pointer" onClick={() => handleSoftDelete(reg.id, false)}>
                                                             <i className="fas fa-undo"></i>
                                                         </button>
-                                                        <button type="button" className="text-red-600 hover:text-red-900" onClick={() => handleHardDelete(reg.id)}>
+                                                        <button type="button" className="text-red-600 hover:text-red-900 cursor-pointer" onClick={() => handleHardDelete(reg.id)}>
                                                             <i className="fas fa-trash"></i>
                                                         </button>
                                                     </>
@@ -213,7 +213,7 @@ export default function RegistrationsPage() {
                                                         <Link href={`/registrations/${reg.id}`} className="text-blue-600 hover:text-blue-900 mr-3">
                                                             <i className="fas fa-edit"></i>
                                                         </Link>
-                                                        <button type="button" className="text-red-600 hover:text-red-900" onClick={() => handleSoftDelete(reg.id, true)}>
+                                                        <button type="button" className="text-red-600 hover:text-red-900 cursor-pointer" onClick={() => handleSoftDelete(reg.id, true)}>
                                                             <i className="fas fa-trash"></i>
                                                         </button>
                                                     </>
@@ -230,14 +230,14 @@ export default function RegistrationsPage() {
                         </table>
                     </div>
 
-                    <div className="p-4 border-t border-gray-200 flex justify-between items-center">
+                    <div className="p-4 border-t border-border flex justify-between items-center bg-navbar transition-colors duration-300">
                         <div className="text-sm text-gray-500">
                             Showing {registrations.length} entries
                         </div>
                         <div className="flex space-x-1">
-                            <button className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50">Previous</button>
+                            <button className="px-3 py-1 border border-border rounded text-sm disabled:opacity-50 text-foreground">Previous</button>
                             <button className="px-3 py-1 bg-blue-600 text-white border border-blue-600 rounded text-sm">1</button>
-                            <button className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50">Next</button>
+                            <button className="px-3 py-1 border border-border rounded text-sm disabled:opacity-50 text-foreground">Next</button>
                         </div>
                     </div>
                 </div>

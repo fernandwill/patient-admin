@@ -28,7 +28,7 @@ const SearchBar = ({ onSearch, placeholder = "Search...", debounceMs = 300 }: Se
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={placeholder}
-                className="border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 pl-8"
+                className="border border-border rounded px-3 py-1.5 text-sm text-foreground bg-background placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 pl-8 transition-colors duration-300"
             />
             <span className="absolute left-2.5 top-1.5 text-gray-400">
                 <i className="fas fa-search"></i>

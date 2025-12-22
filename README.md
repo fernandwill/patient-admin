@@ -1,36 +1,150 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sistem Administrasi Pasien (Patient Admin)
 
-## Getting Started
+Sistem manajemen pasien yang dibuat dengan Next.js, dirancang untuk menangani data master pasien, registrasi pasien, pencarian pasien, dan pelaporan data pasien menggunakan ekspor ke file PDF atau Excel.
 
-First, run the development server:
+Demo aplikasi dapat diakses di: https://patient-admin-demo-681080561228.asia-southeast1.run.app/ (hosted by Google Cloud Platform)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Tech Stack yang Digunakan
+
+- **Framework**: Next.js (App Router & React)
+- **Bahasa**: TypeScript
+- **Styling**: Tailwind CSS
+- **Database**: PostgreSQL
+- **Containerization**: Docker & Docker Compose
+- **Library Utama**:
+  - `jspdf` & `jspdf-autotable` (Laporan PDF)
+  - `xlsx` (Ekspor Excel)
+  - `react-hook-form` (Manajemen Form)
+  - `Cloudinary` (Upload dan Penyimpanan Foto Pasien)
+
+## Fitur 
+
+1. **Manajemen Pasien**:
+   - CRUD lengkap dengan fitur *Soft Delete*. Untuk *Hard Delete* bisa dilakukan melalui page "Show deleted registration/patient" lalu melakukan delete dan konfirmasi dua kali.
+   - Upload foto profil pasien menggunakan layanan Cloudinary.
+   - Auto-generate Nomor Rekam Medis (No RM) unik.
+   - Klik row di list pasien untuk membuka detail pasien.
+   - Pasien yang sudah di "soft delete" bisa di-restore dengan button "Restore".
+
+2. **Registrasi Pasien**:
+   - Pencatatan kunjungan pasien secara *real-time*.
+   - Auto-generate Nomor Registrasi yang reset setiap hari.
+   - Relasi data yang kuat antara registrasi dan data master pasien.
+   - Klik row di list registrasi untuk membuka detail registrasi pasien.
+   - Registrasi yang sudah di "soft delete" bisa di-restore dengan button "Restore".
+
+3. **Pencarian & Filter**:
+   - Pencarian global berdasarkan Nama, Tanggal Lahir, No RM, atau No Registrasi.
+   - Filter data berdasarkan rentang waktu (Start Date - End Date).
+
+4. **Pelaporan**:
+   - Ekspor data ke format Excel (.xlsx).
+   - Ekspor data ke format PDF dengan kop surat yang bisa di custom.
+
+## Fitur Inti
+
+### 1. Auto-Generate Sequence
+Sistem ini menggunakan logika *atomic upsert* pada database untuk menghasilkan nomor urut otomatis (No RM & No Reg) guna mencegah duplikasi data meskipun diakses secara bersamaan.
+
+```typescript
+// lib/sequence.ts
+export async function generateSequenceWithClient(client: PgClient, type: SequenceType, now: Date = new Date()): Promise<string> {
+    const yy = String(now.getUTCFullYear()).slice(-2);
+    const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(now.getUTCDate()).padStart(2, "0");
+    const dateStr = `${yy}${mm}${dd}`;
+    const isoDate = `${now.getUTCFullYear()}-${mm}-${dd}`;
+
+    const upsert = `
+        INSERT INTO sequence_counters (sequence_date, sequence_type, last_value) 
+        VALUES ($1, $2, 1) 
+        ON CONFLICT (sequence_date, sequence_type) 
+        DO UPDATE SET last_value = sequence_counters.last_value + 1 
+        RETURNING last_value;
+    `;
+
+    const {rows} = await client.query(upsert, [isoDate, type]);
+    const counter = rows[0].last_value;
+    const width = type === "RM" ? 3 : 6;
+    const suffix = String(counter).padStart(width, "0");
+
+    return `${dateStr}${suffix}`;
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Upload Foto (Cloudinary)
+Implementasi upload foto menggunakan layanan Cloudinary dengan validasi tipe file (magic bytes dan hanya menerima JPEG/PNG/WEBP) dan batasan ukuran file (5MB).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```typescript
+// app/api/upload/route.ts
+export async function POST(req: Request) {
+    const form = await req.formData();
+    const file = form.get("file") as File;
+    const buffer = Buffer.from(await file.arrayBuffer());
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+    // Validasi Magic Bytes untuk keamanan
+    const isAllowedMagic = checkMagicBytes(buffer); 
+    if (!isAllowedMagic || buffer.length > MAX_SIZE) {
+        return NextResponse.json({error: "Invalid file"}, {status: 400});
+    }
 
-## Learn More
+    // Upload ke Cloudinary menggunakan stream
+    const uploadResult = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream({ folder: "patient-admin" }, (err, res) => {
+            if (err) reject(err);
+            else resolve(res);
+        });
+        stream.end(buffer);
+    });
 
-To learn more about Next.js, take a look at the following resources:
+    return NextResponse.json({ url: uploadResult.secure_url }, { status: 201 });
+}
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. Ekspor Laporan PDF & Excel
+Fitur ekspor data menggunakan `jspdf` untuk laporan PDF dengan kop surat custom dan `xlsx` untuk data spreadsheet MS Excel.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```typescript
+// lib/export.ts
+export const exportToPDF = (data: any[], fileName: string, title: string) => {
+    const doc = new jsPDF();
+    
+    // Desain Kop Surat
+    doc.setFontSize(18);
+    doc.text("TEST HOSPITAL/CLINIC", 105, 15, { align: "center" });
+    doc.line(20, 32, 190, 32);
 
-## Deploy on Vercel
+    // Render Tabel Otomatis
+    autoTable(doc, {
+        head: [["Reg No", "Patient Name", "No RM", "Gender"]],
+        body: data.map(reg => [reg.registration_no, reg.full_name, reg.medical_record_no, reg.gender]),
+        startY: 50,
+        theme: 'grid'
+    });
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+    doc.save(`${fileName}.pdf`);
+};
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+export const exportToExcel = (data: any[], fileName: string) => {
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+    XLSX.writeFile(workbook, `${fileName}.xlsx`);
+};
+```
+
+## Cara Menjalankan Aplikasi Project
+
+### Prasyarat
+- Docker & Docker Compose terinstall di sistem Anda.
+
+### Langkah-langkah menjalankan aplikasi project dengan Docker
+1. Clone repositori ini.
+2. Salin file `.env.example` menjadi `.env` dan isi variabel yang diperlukan (Database, Cloudinary API Key, dll).
+3. Jalankan perintah berikut:
+   ```bash
+   docker compose up -d --build
+   ```
+4. Aplikasi akan berjalan di `http://localhost:3000`.
+
+

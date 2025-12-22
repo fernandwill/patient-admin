@@ -3,20 +3,30 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --card-bg: #ffffff;
+  --border-color: #e5e7eb;
+  --sidebar-bg: #1f2937;
+  --navbar-bg: #ffffff;
+}
+
+.dark {
+  --background: #020617; /* Slate 950 - Deep Midnight */
+  --foreground: #f1f5f9; /* Slate 100 - Soft White */
+  --card-bg: #0f172a;    /* Slate 900 - Subtle Card Contrast */
+  --border-color: #1e293b; /* Slate 800 - Muted Borders */
+  --sidebar-bg: #020617;
+  --navbar-bg: #0f172a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card-bg);
+  --color-border: var(--border-color);
+  --color-sidebar: var(--sidebar-bg);
+  --color-navbar: var(--navbar-bg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {

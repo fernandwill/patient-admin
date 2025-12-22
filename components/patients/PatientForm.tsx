@@ -128,9 +128,9 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="bg-white rounded shadow-sm">
-                <div className="p-6 border-b border-gray-200">
-                    <h3 className="text-lg font-medium text-gray-900">Edit Patient</h3>
+            <div className="bg-card rounded shadow-sm border border-border transition-colors duration-300">
+                <div className="p-6 border-b border-border bg-navbar rounded-t transition-colors duration-300">
+                    <h3 className="text-lg font-medium text-foreground">Edit Patient</h3>
                     <p className="mt-1 text-sm text-gray-500">Edit patient information.</p>
                     {errorMessage ? (
                         <div className="mt-4 p-3 bg-red-50 border-l-4 border-red-400 text-red-700 flex items-center gap-3 animate-in fade-in slide-in-from-top-1">
@@ -147,9 +147,9 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
                     <div className="sm:col-span-6">
                         <div className="mt-1 grid grid-cols-1 gap-4 sm:grid-cols-6">
                             <div className="sm:col-span-6 flex flex-col items-center">
-                                <label className="block text-sm font-medium text-gray-700">Profile Photo</label>
+                                <label className="block text-sm font-medium text-foreground">Profile Photo</label>
                                 <div className="mt-3 flex flex-col items-center gap-3">
-                                    <span className="inline-block h-24 w-24 rounded-full overflow-hidden bg-gray-100 border border-gray-200">
+                                    <span className="inline-block h-24 w-24 rounded-full overflow-hidden bg-background border border-border">
                                         {photoUrl ? (
                                             <img src={photoUrl} alt="patient_pp" className="h-full w-full object-cover" />
                                         ) : (
@@ -158,7 +158,7 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
                                             </svg>
                                         )}
                                     </span>
-                                    <label className={`inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 ${isUploading ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}>
+                                    <label className={`inline-flex items-center rounded-md border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${isUploading ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}>
                                         <input type="file" accept="image/jpeg, image/png, image/webp" className="hidden" onChange={handlePhotoChange} disabled={isUploading} />
                                         {isUploading ? "Uploading..." : "Upload"}
                                     </label>
@@ -172,12 +172,12 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
                             </div>
 
                             <div className="sm:col-span-3">
-                                <label className="block text-sm font-medium text-gray-700">Medical Record No.</label>
+                                <label className="block text-sm font-medium text-foreground">Medical Record No.</label>
                                 <input
                                     type="text"
                                     value={(initialData?.medicalRecordNo ?? "").toString()}
                                     disabled
-                                    className="mt-1 block w-full rounded-md border border-gray-300 bg-gray-50 p-2 text-sm text-gray-400"
+                                    className="mt-1 block w-full rounded-md border border-border bg-background p-2 text-sm text-gray-400"
                                 />
                             </div>
 
@@ -247,7 +247,7 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
                             </div>
 
                             <div className="sm:col-span-3">
-                                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Phone Number</label>
+                                <label htmlFor="phone" className="block text-sm font-medium text-foreground">Phone Number</label>
                                 <div className="mt-1">
                                     <input
                                         type="tel"
@@ -265,7 +265,7 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
                                                 return true;
                                             }
                                         })}
-                                        className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder:text-gray-400 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+                                        className="shadow-sm focus:ring-blue-500 focus:border-blue-500 text-foreground bg-background placeholder:text-gray-400 block w-full sm:text-sm border-border rounded-md p-2 border transition-colors duration-300"
                                         placeholder="+62 812 3456 7890"
                                     />
                                     {errors.phone ? (
@@ -278,13 +278,13 @@ const PatientForm = ({ initialData, isEdit = true }: PatientFormProps) => {
 
                 </div>
 
-                <div className="px-4 py-3 bg-gray-50 text-right sm:px-6 flex justify-end space-x-3">
-                    <Link href="/patients" className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <div className="px-4 py-3 bg-navbar text-right sm:px-6 flex justify-end space-x-3 rounded-b border-t border-border transition-colors duration-300">
+                    <Link href="/patients" className="inline-flex justify-center py-2 px-4 border border-border shadow-sm text-sm font-medium rounded-md text-foreground bg-card hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-300">
                         Cancel
                     </Link>
                     <button
                         type="submit"
-                        className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-300"
                         disabled={isSubmitting}
                     >
                         {isSubmitting ? "Saving..." : "Save"}
